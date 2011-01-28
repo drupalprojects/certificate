@@ -1,0 +1,8 @@
+; $Id$
+core = "6.x"
+dependencies[] = "print_pdf"
+dependencies[] = "hs_field_selector"
+description = "Provides PDF certificates with criteria-based selection."
+name = "Certificate"
+project = "certificate"
+version = "6.x-1.0"
