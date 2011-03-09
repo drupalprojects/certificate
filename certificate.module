@@ -1,4 +1,5 @@
 <?php
+// $Id$
 
 /**
  * Certificate module.
@@ -533,6 +534,13 @@ function certificate_nodeapi(&$node, $op, $teaser = NULL, $page = NULL) {
 
       case 'load':
         return array('certificate' => array('node_settings' => certificate_course_node_template_settings($node->nid)));
+        break;
+
+      case 'view':
+        if (certificate_can_access_certificate($node)) {
+          $node->content['certificate']['#value'] = '<span class="certificate-link">' . l(t('Download certificate'), "node/{$node->nid}/certificate") . '</span>';
+        }
+        break;
     }
   }
 
@@ -553,6 +561,23 @@ function certificate_nodeapi(&$node, $op, $teaser = NULL, $page = NULL) {
         );
     }
   }
+}
+
+/**
+ * Implementation of hook_content_extra_fields().
+ * Allow the certificate download link to be sorted in the node edit forms.
+ */
+function certificate_content_extra_fields($type_name) {
+  $node->type = $type_name;
+  if (certificate_node_is_certifiable($node)) {
+    $extras['certificate'] = array(
+      'label' => t('Certificate'),
+      'description' => t('Certificate link.'),
+      'weight' => 10,
+    );
+  }
+
+  return $extras;
 }
 
 /**
@@ -661,12 +686,47 @@ function certificate_reset_certificates_action($object, $context) {
 
 /**
  * Check if a user can access a certificate for this node.
+ *
+ * This function:
+ *  @return TRUE if certificate tab should show and be accessible.
+ *  @return string (eval to true for Drupal's menu) if certificate tab should
+ *    show but be denied with a message.
+ *  @return FALSE if certificate tab should be hidden.
  */
 function certificate_can_access_certificate(&$node, &$account = NULL) {
   if (!$account) {
     global $user;
     $account = $user;
   }
+
+  if (!$account->uid) {
+    return FALSE;
+  }
+
   $access = module_invoke_all('access_certificate', $node, $account);
-  return (in_array(TRUE, $access));
+  foreach($access as $item) {
+    if ($item === TRUE) {
+      // Something said the leaner should access the certificate.
+      $found_true = TRUE;
+    }
+    if (is_string($item)) {
+      // Something returned a string, return it (will show the menu, but error)
+      return $item;
+    }
+    if ($item === FALSE) {
+      $found_false = TRUE;
+    }
+  }
+
+  if ($found_true) {
+    if ($found_false) {
+      // Found TRUE and FALSEs.
+      return FALSE;
+    }
+    // Only found TRUE.
+    return TRUE;
+  }
+
+  // All were false.
+  return FALSE;
 }

@@ -1,4 +1,5 @@
 <?php
+// $Id$
 
 /**
  * @file
@@ -39,9 +40,10 @@ function certificate_type_mapping_form($form_state, $node = NULL) {
     // Generate form elements based on selected field's allowed values.
       if (count($fieldgroups)) {
         foreach ($fieldgroups as $key => $fieldgroup) {
+          // We don't care about $fieldgroup - just the key.
           // Get node-based setting, if not set, use global.
           if ($node) {
-            $template = $node_template_settings[$key]['template'];
+            $template = $node_template_settings[$key];
             $template = $template ? $template : 0;
           }
           else {

@@ -1,4 +1,5 @@
 <?php
+// $Id$
 
 /**
  * @file
@@ -16,6 +17,13 @@ function certificate_node_certificate(&$node) {
 
   if ($user->uid) {
     $account = $user;
+  }
+
+  $perm = certificate_can_access_certificate($node, $user);
+
+  if ($perm != 1) {
+    //$perm is a string! show error.
+    return $perm;
   }
 
   // Use account of a different user if allowed.
@@ -97,18 +105,21 @@ function certificate_single($account, $node) {
 
       if (variable_get('certificate_field_grouping', 0)) {
         // Get user's 'type' from $account.
-        $user_type = $profile->{$certificate_type_field}[0]['value'];
+        $user_types = $profile->{$certificate_type_field};
         $field_options_array = variable_get('certificate_field_groups', array());
         foreach($field_options_array as $key => $fieldgroup) {
           foreach($fieldgroup as $value) {
-            if ($user_type == $value) {
-              // This node has settings saved in the DB - use the per-node settings?
-              if ($node_template_settings[$key]['template']) {
-                $template_id = $node_template_settings[$key]['template'];
-              }
-              // Else this node doesn't have settings saved in the DB yet - use the global settings?
-              else {
-                $template_id = variable_get('certificate_type_'. $key .'_template', null);
+            foreach ($user_types as $user_type) {
+              $user_type = $user_type['value'];
+              if ($user_type == $value) {
+                // This node has settings saved in the DB - use the per-node settings?
+                if ($node_template_settings[$key]) {
+                  $template_id = $node_template_settings[$key];
+                }
+                // Else this node doesn't have settings saved in the DB yet - use the global settings?
+                else {
+                  $template_id = variable_get('certificate_type_'. $key .'_template', null);
+                }
               }
             }
           }
@@ -259,11 +270,6 @@ function certificate_preview($template_id) {
  * @return The certificate HTML with all tokens translated.
  */
 function theme_certificate_certificate($account, $profile, $node, $group, $template) {
-  // Synch the reports table.
-  if (module_exists('ethosce_reports')){
-    $courses_updated = ethosce_reports_synch_report_table($node->nid);
-  }
-
   $types = array(
     'global' => null,
     'node' => $node,
@@ -286,6 +292,7 @@ function theme_certificate_certificate($account, $profile, $node, $group, $templ
     $template->body = token_replace_multiple($template->body, $types);
   }
 
+  $template->body = check_markup($template->body, $template->format, FALSE);
 
   $output = "<div class='ethosce-certificates-certificate' id='ethosce-certificates-certificate-{$template->nid}'>";
   $output .= $template->body;
