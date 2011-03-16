@@ -692,7 +692,7 @@ function certificate_reset_certificates_action($object, $context) {
  *    show but be denied with a message.
  *  @return FALSE if certificate tab should be hidden.
  */
-function certificate_can_access_certificate(&$node, &$account = NULL) {
+function certificate_can_access_certificate($node, $account = NULL) {
   if (!$account) {
     global $user;
     $account = $user;
