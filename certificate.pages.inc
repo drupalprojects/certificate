@@ -11,7 +11,7 @@
 /**
  * Get certificate for a specific node.
  */
-function certificate_node_certificate(&$node) {
+function certificate_node_certificate($node) {
   global $user;
 
   if ($user->uid) {
