@@ -1,3 +1,0 @@
-name = Signup Certificate
-core = 6.x
-description = Controls access to certificate based on user's attendance.
