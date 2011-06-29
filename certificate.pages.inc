@@ -11,7 +11,7 @@
 /**
  * Get certificate for a specific node.
  */
-function certificate_node_certificate(&$node) {
+function certificate_node_certificate($node) {
   global $user;
 
   if ($user->uid) {
@@ -119,6 +119,8 @@ function certificate_single($account, $node) {
                 else {
                   $template_id = variable_get('certificate_type_'. $key .'_template', null);
                 }
+                // Found a match, do not continue.
+                break 3;
               }
             }
           }
@@ -150,10 +152,17 @@ function certificate_single($account, $node) {
       }
     }
 
+    drupal_alter('certificate_template_id', $template_id, $node, $account);
+
     $template = node_load($template_id);
 
     if ($template && $node) {
-      $output = theme('certificate_certificate', $account, $profile, $node, $group, $template);
+      // Prepend output with UTF 8 meta tag.
+      // See http://code.google.com/p/wkhtmltopdf/issues/detail?id=556
+      // Print module gets around this because the meta tag in Drupal is already
+      // set - but here, we have to add it since we are only delivering the node
+      // body.
+      $output = '<meta charset="utf-8">' . theme('certificate_certificate', $account, $profile, $node, $group, $template);
 
       // Now save this generated certificate as a 'snapshot' in the database.
       $snapshot['uid'] = $account->uid;
@@ -202,7 +211,7 @@ function certificate_single($account, $node) {
     $pattern = '!<(img\s[^>]*?)>!is';
     $output = preg_replace_callback($pattern, '_print_rewrite_urls', $output);
     global $conf;
-    $conf['print_pdf_page_orientation'] = $node->certificate['orientation'];
+    $conf['print_pdf_page_orientation'] = $template->certificate['orientation'];
 
     if (basename($print_pdf_pdf_tool) == 'dompdf_config.inc.php') {
       $print_func = '_print_pdf_dompdf';
@@ -293,9 +302,5 @@ function theme_certificate_certificate($account, $profile, $node, $group, $templ
 
   $template->body = check_markup($template->body, $template->format, FALSE);
 
-  $output = "<div class='ethosce-certificates-certificate' id='ethosce-certificates-certificate-{$template->nid}'>";
-  $output .= $template->body;
-  $output .= '</div>';
-
-  return $output;
+  return $template->body;
 }

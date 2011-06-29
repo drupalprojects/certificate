@@ -26,6 +26,15 @@ function certificate_node_info() {
   return $items;
 }
 
+function certificate_course_object_info() {
+  return array(
+    'certificate' => array(
+      'title' => 'Certificate',
+      'graded' => 0,
+    ),
+  );
+}
+
 /**
  * Implementation of hook_access().
  */
@@ -79,6 +88,7 @@ function certificate_form(&$node, $form_state) {
     '#default_value' => isset($node->certificate['orientation']) ? $node->certificate['orientation'] : '',
     '#options' => array('portrait' => t('Portrait'), 'landscape' => t('Landscape')),
     '#required' => TRUE,
+    '#description' => 'The orientation of the generated certificate.',
   );
 
   $form['options']['status']['#default_value'] = 0;
@@ -239,29 +249,28 @@ function certificate_menu() {
   );
 
   $items['admin/settings/certificate/mapping'] = array(
-    'title' => 'Field mapping',
+    'title' => 'Mapping',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('certificate_settings_form'),
     'access arguments' => array('administer certificates'),
     'file' => 'certificate.admin.inc',
     'type' => MENU_LOCAL_TASK,
-    'weight' => 10,
   );
 
   $items['admin/settings/certificate/mapping/list'] = array(
-    'title' => 'Mapping',
+    'title' => 'Fields',
     'type' => MENU_DEFAULT_LOCAL_TASK,
-    'weight' => 1,
+    'weight' => -10,
   );
 
   $items['admin/settings/certificate/mapping/groups'] = array(
-    'title' => 'Groups',
+    'title' => 'Field groups',
     'description' => 'Set up certificate field groups',
     'page callback' => 'certificate_field_grouping_page',
     'access arguments' => array('administer certificates'),
     'file' => 'certificate.admin.inc',
     'type' => MENU_LOCAL_TASK,
-    'weight' => 2,
+    'weight' => -9,
   );
 
   $items['admin/settings/certificate/mapping/groups/add'] = array(
@@ -529,6 +538,7 @@ function certificate_nodeapi(&$node, $op, $teaser = NULL, $page = NULL) {
       case 'delete':
         // Clean up the certificate template tables for the deleted node.
         db_query("DELETE FROM {certificate_node} WHERE nid = %d", $node->nid);
+        db_query("DELETE FROM {certificate_snapshots} WHERE nid = %d", $node->nid);
         break;
 
       case 'load':
@@ -549,7 +559,7 @@ function certificate_nodeapi(&$node, $op, $teaser = NULL, $page = NULL) {
       case 'update':
         $record = $node->certificate;
         $record['nid'] = $node->nid;
-        if ($op == 'update') {
+        if (db_result(db_query("select 1 from {certificate_node_settings} where nid = %d", $node->nid))) {
           $keys = array('nid');
         }
         drupal_write_record('certificate_node_settings', $record, $keys);
@@ -692,7 +702,9 @@ function certificate_reset_certificates_action($object, $context) {
  *    show but be denied with a message.
  *  @return FALSE if certificate tab should be hidden.
  */
-function certificate_can_access_certificate(&$node, &$account = NULL) {
+function certificate_can_access_certificate($node, &$account = NULL) {
+  static $cert_access = array();
+
   if (!$account) {
     global $user;
     $account = $user;
@@ -702,7 +714,14 @@ function certificate_can_access_certificate(&$node, &$account = NULL) {
     return FALSE;
   }
 
-  $access = module_invoke_all('access_certificate', $node, $account);
+  if (!isset($cert_access[$node->nid])) {
+    $access = module_invoke_all('access_certificate', $node, $account);
+    $cert_access[$node->nid] = $access;
+  }
+  else {
+    $access = $cert_access[$node->nid];
+  }
+
   foreach($access as $item) {
     if ($item === TRUE) {
       // Something said the leaner should access the certificate.
@@ -728,4 +747,26 @@ function certificate_can_access_certificate(&$node, &$account = NULL) {
 
   // All were false.
   return FALSE;
+}
+
+function certificate_user($op, &$edit, &$account, $category = NULL) {
+  if ($op == 'delete') {
+    $sql = "delete from {certificate_snapshots} where uid = %d";
+    db_query($sql, $account->uid);
+  }
+}
+
+/**
+ * Return an array of certificate templates suitable for use in an options
+ * form element.
+ */
+function certificate_get_template_options() {
+  // Get existing templates.
+  $templates = certificate_certificate_load_all();
+
+  foreach ($templates as $key => $template) {
+    $template_options[$key] = $template['title'];
+  }
+
+  return $template_options;
 }
