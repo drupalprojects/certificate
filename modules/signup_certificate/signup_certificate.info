@@ -1,0 +1,5 @@
+name = Signup Certificate
+core = 6.x
+description = Grants access to certificate if user is marked attended for a signup.
+dependencies[] = "certificate"
+dependencies[] = "signup"

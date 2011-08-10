@@ -1,4 +1,5 @@
 core = "6.x"
+dependencies[] = "print"
 dependencies[] = "print_pdf"
 dependencies[] = "hs_field_selector"
 description = "Provides PDF certificates with criteria-based selection."
