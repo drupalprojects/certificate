@@ -1,0 +1,5 @@
+name = Quiz certificates
+core = 6.x
+description = Award a Certificate when a quiz is passed.
+dependencies[] = quiz
+dependencies[] = certificate
