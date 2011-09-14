@@ -36,3 +36,46 @@ function hook_certificate_template_id_alter(&$template_id, $node, $user) {
     $template_id = 476;
   }
 }
+
+/**
+ * Implementation of hook_certificate_map_options().
+ *
+ * Provide a list of options to the user that can be mapped to certificate
+ * templates.
+ *
+ * @return Array of mapping sets.
+ */
+function hook_certificate_map_options() {
+  $options = array(
+    'sad' => 'Sad',
+    'happy' => 'Happy',
+  );
+
+  return array(
+    'mood' => array(
+      'title' => "User's mood",
+      'options' => $options,
+      'description' => 'Using this mapping will award a certificate based on what mood the user is currently in.',
+    ),
+  );
+}
+
+/**
+ * Implementation of hook_certificate_map().
+ *
+ * Return the key of the mapping to use.
+ *
+ * @return String
+ *   Key of matched mapping.
+ */
+function hook_certificate_map($node, $user, $map_type, $options) {
+  if ($map_type == 'mood') {
+    foreach ($options as $key => $value) {
+      if ($user->mood == $value) {
+        // User's mood matched, so return the key. Certificate module will then
+        // match the key to the template ID.
+        return $key;
+      }
+    }
+  }
+}
