@@ -359,9 +359,10 @@ function certificate_settings_form(&$form_state) {
   $types = variable_get('certificate_field_certificate_type', '');
   $form['certificate_settings']['types'] = array(
     '#type' => 'fieldset',
-    '#title' => t('Mapped profile field'),
+    '#title' => t('Profile fields'),
     '#collapsible' => TRUE,
     '#collapsed' => $types != '',
+    '#description' => "Using this mapping will award certificates solely based on a field in the user's content profile.",
   );
 
   if (module_exists('content')) {
@@ -384,6 +385,43 @@ function certificate_settings_form(&$form_state) {
   module_load_include('inc', 'certificate', 'certificate.admin');
 
   $form['certificate_settings']['map'] = certificate_type_mapping_form(array());
+  $form['certificate_settings']['types']['nogroups'] =  $form['certificate_settings']['map']['nogroups'];
+  unset($form['certificate_settings']['map']['nogroups']);
+
+  // Custom (module-provided) mappings.
+  $mappings = module_invoke_all('certificate_map_options');
+
+  $options = array('');
+  foreach (certificate_certificate_load_all() as $cert) {
+    $options[$cert['nid']] = $cert['title'];
+  }
+
+  foreach ($mappings as $map_type => $map) {
+    $stored = variable_get("certificate_map_{$map_type}", array());
+    $form['certificate_settings']['map'][$map_type] = array(
+      '#title' => $map['title'],
+      '#type' => 'fieldset',
+      '#group' => TRUE,
+      '#description' => $map['description'],
+    );
+
+    if (count($map['options'])) {
+      foreach ($map['options'] as $key => $value) {
+        $form['certificate_settings']['map'][$map_type][$key] = array(
+          '#type' => 'select',
+          '#title' => $value,
+          '#options' => $options,
+          '#default_value' => $stored[$key],
+        );
+      }
+    }
+    else {
+      $form['certificate_settings']['map'][$map_type]['empty'] = array(
+        '#value' => 'There are no mappings available for ' . $map['title'],
+      );
+    }
+  }
+
 
   $form['buttons']['submit'] = array(
     '#type' => 'submit',
@@ -426,6 +464,14 @@ function certificate_settings_form_submit($form, &$form_state) {
   if ($field_options_array) {
     foreach ($field_options_array as $key => $option_name) {
       variable_set('certificate_type_'. $key .'_template', $settings['map'][$key]);
+    }
+  }
+
+  // Save module provided mappings.
+  foreach ($form_state['values']['certificate_settings']['map'] as $key => $val) {
+    if (is_array($val)) {
+      // Custom map group.
+      variable_set("certificate_map_$key", $val);
     }
   }
 
@@ -781,4 +827,88 @@ function certificate_admin_settings_form() {
   );
 
   return system_settings_form($form);
+}
+
+/**
+ * Form to clear certificate snapshots.
+ */
+function certificate_admin_clear_form() {
+  $form = array();
+
+  $header = array(
+    array(),
+    array('data' => 'Title', 'field' => 'n.title'),
+    array('data' => 'Count', 'field' => 'count'),
+  );
+
+  $sql = "select *, count(cs.uid) as count from {certificate_snapshots} cs
+  left join {node} n on (cs.nid = n.nid)
+  group by cs.nid";
+
+  $sql .= tablesort_sql($header);
+
+  $result = db_query($sql);
+  while ($row = db_fetch_object($result)) {
+    $nids[$row->nid] = '';
+    $form['cs']['title'][$row->nid]['#value'] = $row->title;
+    $form['cs']['count'][$row->nid]['#value'] = $row->count;
+  }
+
+  $form['cs']['nids'] = array(
+    '#type' => 'checkboxes',
+    '#options' => $nids,
+  );
+
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => 'Clear',
+  );
+
+  return $form;
+}
+
+/**
+ * Theme certificate_admin_clear_form.
+ */
+function theme_certificate_admin_clear_form($form) {
+  $header = array(
+    theme('table_select_header_cell'),
+    array('data' => 'Title', 'field' => 'n.title'),
+    array('data' => 'Count', 'field' => 'cs_count')
+  );
+
+  if (count($form['cs']['title'])) {
+    foreach (element_children($form['cs']['title']) as $key) {
+      $rows[] = array(
+        drupal_render($form['cs']['nids'][$key]),
+        drupal_render($form['cs']['title'][$key]),
+        drupal_render($form['cs']['count'][$key]),
+      );
+    }
+  }
+  else {
+    return "No snapshots to clear.";
+  }
+
+  return theme('table', $header, $rows) . drupal_render($form);
+}
+
+/**
+ * Delete selected certificate snapshots.
+ */
+function certificate_admin_clear_form_submit(&$form, &$form_state) {
+  $nids = array();
+
+  foreach($form_state['values']['nids'] as $nid => $delete) {
+    if ($delete) {
+      $nids[] = $nid;
+    }
+  }
+
+  if (count($nids)) {
+    $placeholders = db_placeholders($nids);
+    db_query("delete from {certificate_snapshots} where nid in ($placeholders)", $nids);
+
+    drupal_set_message('Cleared certificate snapshots.');
+  }
 }

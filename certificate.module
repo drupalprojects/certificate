@@ -126,6 +126,15 @@ function certificate_menu() {
     'page arguments' => array('certificate_admin_settings_form'),
   );
 
+  $items['admin/settings/certificate/clear'] = array(
+    'title' => 'Clear',
+    'access arguments' => array('administer certificates'),
+    'file' => 'certificate.admin.inc',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('certificate_admin_clear_form'),
+    'type' => MENU_LOCAL_TASK,
+  );
+
   $items['admin/settings/certificate/types'] = array(
     'title' => 'Settings',
     'description' => 'Select nodes which are certifiable.',
@@ -325,6 +334,10 @@ function certificate_theme() {
   $items['certificate_certificate'] = array(
     'arguments' => array('certificate' => array()),
     'file' => 'certificate.pages.inc',
+  );
+  $items['certificate_admin_clear_form'] = array(
+    'arguments' => array('form' => NULL),
+    'file' => 'certificate.admin.inc',
   );
   return $items;
 }
@@ -593,9 +606,6 @@ function certificate_content_extra_fields($type_name) {
  * @todo make $types more generic.
  */
 function certificate_node_is_certifiable(&$node) {
-  if (module_exists('course') && course_node_is_course($node)) {
-    return true;
-  }
   return variable_get("certificate_certifiable_{$node->type}", 0);
 }
 

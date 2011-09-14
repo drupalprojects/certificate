@@ -152,6 +152,16 @@ function certificate_single($account, $node) {
       }
     }
 
+    // Module provided mappings override all! (For now?)
+    $modules = module_invoke_all('certificate_map_options');
+    foreach ($modules as $map_type => $map) {
+      $mapping = variable_get("certificate_map_{$map_type}", array());
+      $matches = module_invoke_all('certificate_map', $node, $user, $map_type, $mapping, array());
+      if (count($matches)) {
+        $template_id = $mapping[$matches[0]]; // First one for now.
+      }
+    }
+
     drupal_alter('certificate_template_id', $template_id, $node, $account);
 
     $template = node_load($template_id);
