@@ -198,16 +198,3 @@ function certificate_requirements($phase) {
     }
   }
 }
-
-/**
- * Implementation of hook_update_N().
- *
- * Update certificate node options and comment variables.
- */
-function certificate_update_6000() {
-  $ret = array();
-  variable_set('node_options_certificate', array());
-  variable_set('comment_certificate', 0);
-  $ret[] = array('success' => TRUE, 'query' => t('Updated certificate node options and comment variables.'));
-  return $ret;
-}
