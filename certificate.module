@@ -508,11 +508,13 @@ function certificate_form_alter(&$form, &$form_state, $form_id) {
 function certificate_form_certificate_node_form_alter(&$form, &$form_state) {
   if (module_exists('token')) {
     // Embed token help.
-    $form['tokens']['#type'] = 'fieldset';
-    $form['tokens']['#title'] = 'Tokens';
-    $form['tokens']['#collapsible'] = TRUE;
-    $form['tokens']['#collapsed'] = TRUE;
-    $form['tokens']['list']['#value'] = theme('token_tree', array('global', 'node','user', 'certificate'), FALSE);
+    $form['certificate_tokens'] = array(
+      '#title' => 'Certificate tokens',
+      '#type' => 'fieldset',
+      '#collapsible' => TRUE,
+      '#collapsed' => FALSE,
+      '#value' => theme('token_tree', array('global', 'node','user', 'certificate'), FALSE),
+    );
   }
   // No preview - we want users to see it in PDF for accuracy.
   $form['buttons']['preview'] = NULL;
@@ -596,6 +598,12 @@ function certificate_content_extra_fields($type_name) {
       'label' => t('Certificate'),
       'description' => t('Certificate link.'),
       'weight' => 10,
+    );
+  }
+  if ($type_name == 'certificate') {
+    $extras['certificate_tokens'] = array(
+      'label' => t('Certificate tokens'),
+      'description' => t('Tokens to insert into the certificate.'),
     );
   }
 
