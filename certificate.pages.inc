@@ -156,6 +156,7 @@ function certificate_single($account, $node) {
     $modules = module_invoke_all('certificate_map_options');
     foreach ($modules as $map_type => $map) {
       $mapping = variable_get("certificate_map_{$map_type}", array());
+      $mapping = array_filter($mapping);
       $matches = module_invoke_all('certificate_map', $node, $user, $map_type, $mapping, array());
       if (count($matches)) {
         $template_id = $mapping[$matches[0]]; // First one for now.
@@ -237,6 +238,12 @@ function certificate_single($account, $node) {
   }
 }
 
+/**
+ * Preview certificate.
+ *
+ * @todo This code is copied from above, needs to be refactored to avoid
+ * copypasta.
+ */
 function certificate_preview($template_id) {
   $template = node_load($template_id);
     if ($template) {
@@ -260,7 +267,7 @@ function certificate_preview($template_id) {
   $pattern = '!<(img\s[^>]*?)>!is';
   $output = preg_replace_callback($pattern, '_print_rewrite_urls', $output);
   global $conf;
-  $conf['print_pdf_page_orientation'] = $node->certificate['orientation'];
+  $conf['print_pdf_page_orientation'] = $template->certificate['orientation'];
 
   if (basename($print_pdf_pdf_tool) == 'dompdf_config.inc.php') {
     $print_func = '_print_pdf_dompdf';
