@@ -26,15 +26,6 @@ function certificate_node_info() {
   return $items;
 }
 
-function certificate_course_object_info() {
-  return array(
-    'certificate' => array(
-      'title' => 'Certificate',
-      'graded' => 0,
-    ),
-  );
-}
-
 /**
  * Implementation of hook_access().
  */

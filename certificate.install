@@ -172,6 +172,10 @@ function certificate_schema() {
  */
 function certificate_install() {
   drupal_install_schema('certificate');
+
+  // Set certificate variables.
+  variable_set('node_options_certificate', array(0 => 'revision'));
+  variable_set('comment_certificate', 0);
 }
 
 /**
@@ -186,6 +190,8 @@ function certificate_uninstall() {
   while ($variable = db_fetch_object($variables)) {
     variable_del($variable->name);
   }
+  variable_del('node_options_certificate');
+  variable_del('comment_certificate');
 }
 
 /**

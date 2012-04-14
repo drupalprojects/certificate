@@ -58,108 +58,109 @@ function certificate_single($account, $node) {
     $output = $snapshot['snapshot'];
   }
   else {
-    // Find a certificate based on criteria - medium priority.
+    // Do matches on fieldmapping
+    // Find certificate based on set profile field. This is lowest priority
+    // Find certificate based on node setting. This is highest priority
+    $profile = _certificate_get_user_profile($account);
 
-    $sql = "select * from {certificate_criteria} cc
-    left join {certificate_types} ct on ct.type_id = cc.type_id
-    order by cc.type_id";
-    $query = db_query($sql);
-    $certificate_types = array();
-    while ($criteria = db_fetch_object($query)) {
-      $criteria->check_key = unserialize($criteria->check_key);
-      $criteria->check_key = $criteria->check_key[1];
-      $certificate_types[$criteria->type_id][$criteria->check_id] = $criteria;
-    }
-    foreach ($certificate_types as $certificate_type) {
-      $use_this_type = true;
-      foreach ($certificate_type as $criteria) {
-        // Checking a field value: $criteria->check_type with key $criteria->check_key against $criteria->check_value.
-        if (empty($criteria->check_key)) {
-          // If no field set, check the node type.
-          if (!(${$criteria->check_type}->type == $criteria->check_value)) {
-            $use_this_type = false;
-          }
-        }
-        else if (!(${$criteria->check_type}->{$criteria->check_key}[0]['value'] == $criteria->check_value)) {
-          $use_this_type = false;
-        }
-      }
-      if ($use_this_type) {
-        $template_id = $criteria->template_id;
-        break;
-      }
-    }
+    // Get existing node-specific template settings.
+    $node_template_settings = $node->certificate['node_settings'];
 
-    // If no criteria match, do matches on fieldmapping
-    if (!$template_id) {
-      // Find certificate based on set profile field. This is lowest priority
-      // Find certificate based on node setting. This is highest priority
-      $profile = _certificate_get_user_profile($account);
+    // Get certificate 'type' field.
+    $certificate_type_field = certificate_get_selected_type();
 
-      // Get existing node-specific template settings.
-      $node_template_settings = $node->certificate['node_settings'];
-
-      // Get certificate 'type' field.
-      $certificate_type_field = certificate_get_selected_type();
-
-      if (variable_get('certificate_field_grouping', 0)) {
-        // Get user's 'type' from $account.
-        $user_types = $profile->{$certificate_type_field};
-        $field_options_array = variable_get('certificate_field_groups', array());
-        foreach($field_options_array as $key => $fieldgroup) {
-          foreach($fieldgroup as $value) {
-            foreach ($user_types as $user_type) {
-              $user_type = $user_type['value'];
-              if ($user_type == $value) {
-                // This node has settings saved in the DB - use the per-node settings?
-                if ($node_template_settings[$key]) {
-                  $template_id = $node_template_settings[$key];
-                }
-                // Else this node doesn't have settings saved in the DB yet - use the global settings?
-                else {
-                  $template_id = variable_get('certificate_type_'. $key .'_template', null);
-                }
-                // Found a match, do not continue.
-                break 3;
-              }
-            }
-          }
-        }
-      }
-      else {
-        // Get user's 'type' from $account.
-        $user_type = $profile->{$certificate_type_field}[0]['value'];
-        // Get certificate template that matches type.
-        // Get field's options from types selection.
-        // This returns groups if set to grouping.
-        $field_options_array = certificate_get_selected_type_options();
-
-        // Get form element names based on selected field's options (if field is selected).
-        if (is_array($field_options_array) && $account->uid != 0) {
-          foreach ($field_options_array as $key => $option_name) {
-            if ($key == $user_type) {
+    if (variable_get('certificate_field_grouping', 0)) {
+      // Get user's 'type' from $account.
+      $user_types = $profile->{$certificate_type_field};
+      $field_options_array = variable_get('certificate_field_groups', array());
+      foreach ($field_options_array as $key => $fieldgroup) {
+        foreach ($fieldgroup as $value) {
+          foreach ($user_types as $user_type) {
+            $user_type = $user_type['value'];
+            if ($user_type == $value) {
               // This node has settings saved in the DB - use the per-node settings?
               if ($node_template_settings[$key]) {
                 $template_id = $node_template_settings[$key];
               }
               // Else this node doesn't have settings saved in the DB yet - use the global settings?
               else {
-                $template_id = variable_get('certificate_type_'. $key .'_template', null);
+                $template_id = variable_get('certificate_type_' . $key . '_template', null);
               }
+              // Found a match, do not continue.
+              break 3;
+            }
+          }
+        }
+      }
+    }
+    else {
+      // Get user's 'type' from $account.
+      $user_type = $profile->{$certificate_type_field}[0]['value'];
+      // Get certificate template that matches type.
+      // Get field's options from types selection.
+      // This returns groups if set to grouping.
+      $field_options_array = certificate_get_selected_type_options();
+
+      // Get form element names based on selected field's options (if field is selected).
+      if (is_array($field_options_array) && $account->uid != 0) {
+        foreach ($field_options_array as $key => $option_name) {
+          if ($key == $user_type) {
+            // This node has settings saved in the DB - use the per-node settings?
+            if ($node_template_settings[$key]) {
+              $template_id = $node_template_settings[$key];
+            }
+            // Else this node doesn't have settings saved in the DB yet - use the global settings?
+            else {
+              $template_id = variable_get('certificate_type_' . $key . '_template', null);
             }
           }
         }
       }
     }
 
-    // Module provided mappings override all! (For now?)
-    $modules = module_invoke_all('certificate_map_options');
-    foreach ($modules as $map_type => $map) {
-      $mapping = variable_get("certificate_map_{$map_type}", array());
-      $mapping = array_filter($mapping);
-      $matches = module_invoke_all('certificate_map', $node, $user, $map_type, $mapping, array());
-      if (count($matches)) {
-        $template_id = $mapping[$matches[0]]; // First one for now.
+    // If no local mappings, try matching with criteria.
+    if (!$template_id) {
+      $sql = "select * from {certificate_criteria} cc
+      left join {certificate_types} ct on ct.type_id = cc.type_id
+      order by cc.type_id";
+      $query = db_query($sql);
+      $certificate_types = array();
+      while ($criteria = db_fetch_object($query)) {
+        $criteria->check_key = unserialize($criteria->check_key);
+        $criteria->check_key = $criteria->check_key[1];
+        $certificate_types[$criteria->type_id][$criteria->check_id] = $criteria;
+      }
+      foreach ($certificate_types as $certificate_type) {
+        $use_this_type = true;
+        foreach ($certificate_type as $criteria) {
+          // Checking a field value: $criteria->check_type with key $criteria->check_key against $criteria->check_value.
+          if (empty($criteria->check_key)) {
+            // If no field set, check the node type.
+            if (!(${$criteria->check_type}->type == $criteria->check_value)) {
+              $use_this_type = false;
+            }
+          }
+          else if (!(${$criteria->check_type}->{$criteria->check_key}[0]['value'] == $criteria->check_value)) {
+            $use_this_type = false;
+          }
+        }
+        if ($use_this_type) {
+          $template_id = $criteria->template_id;
+          break;
+        }
+      }
+    }
+
+    // No mappings at all. Pass to other modules.
+    if (!$template_id) {
+      $modules = module_invoke_all('certificate_map_options');
+      foreach ($modules as $map_type => $map) {
+        $mapping = variable_get("certificate_map_{$map_type}", array());
+        $mapping = array_filter($mapping);
+        $matches = module_invoke_all('certificate_map', $node, $user, $map_type, $mapping, array());
+        if (count($matches)) {
+          $template_id = $mapping[$matches[0]]; // First one for now.
+        }
       }
     }
 
@@ -201,10 +202,10 @@ function certificate_single($account, $node) {
     }
   }
 
-  $print_pdf_pdf_tool = variable_get('print_pdf_pdf_tool','');
+  $print_pdf_pdf_tool = variable_get('print_pdf_pdf_tool', '');
   if ($print_pdf_pdf_tool == '') {
     if ($user->uid == 1) {
-      drupal_set_message('Certificate cannot be displayed because you have not selected a PDF generation tool in ' . l('Printer, e-mail and PDF versions','admin/settings/print/pdf') . '.', 'error');
+      drupal_set_message('Certificate cannot be displayed because you have not selected a PDF generation tool in ' . l('Printer, e-mail and PDF versions', 'admin/settings/print/pdf') . '.', 'error');
     }
     else {
       drupal_set_message('PDF generation tool is not configured.');
@@ -212,7 +213,7 @@ function certificate_single($account, $node) {
     return '';
   }
 
-  module_load_include('pages.inc','print_pdf','print_pdf');
+  module_load_include('pages.inc', 'print_pdf', 'print_pdf');
 
   if ($preview) {
     print $output;
@@ -246,14 +247,14 @@ function certificate_single($account, $node) {
  */
 function certificate_preview($template_id) {
   $template = node_load($template_id);
-    if ($template) {
-      $output = theme('certificate_certificate', $account, $profile, $node, $group, $template);
-    }
+  if ($template) {
+    $output = theme('certificate_certificate', $account, $profile, $node, $group, $template);
+  }
 
-  $print_pdf_pdf_tool = variable_get('print_pdf_pdf_tool','');
+  $print_pdf_pdf_tool = variable_get('print_pdf_pdf_tool', '');
   if ($print_pdf_pdf_tool == '') {
     if ($user->uid == 1) {
-      drupal_set_message('Certificate cannot be displayed because you have not selected a PDF generation tool in ' . l('Printer, e-mail and PDF versions','admin/settings/print/pdf') . '.', 'error');
+      drupal_set_message('Certificate cannot be displayed because you have not selected a PDF generation tool in ' . l('Printer, e-mail and PDF versions', 'admin/settings/print/pdf') . '.', 'error');
     }
     else {
       drupal_set_message('PDF generation tool is not configured.');
@@ -261,7 +262,7 @@ function certificate_preview($template_id) {
     return '';
   }
 
-  module_load_include('pages.inc','print_pdf','print_pdf');
+  module_load_include('pages.inc', 'print_pdf', 'print_pdf');
 
   // Rewrite image URLs using Print.
   $pattern = '!<(img\s[^>]*?)>!is';
