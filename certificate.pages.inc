@@ -25,8 +25,11 @@ function certificate_node_certificate($node) {
     return $perm;
   }
 
+  $admin = user_access('administer certificates');
+  $view_all = user_access('view all user certificates');
+
   // Use account of a different user if allowed.
-  if (user_access('administer certificates') && arg(3) > 0) {
+  if (($admin || $view_all) && arg(3) > 0) {
     $account = user_load(arg(3));
   }
 
@@ -42,125 +45,27 @@ function certificate_single($account, $node) {
   global $user;
   $output = '';
 
-  // See if if user already has a certificate for a course.
-  $snapshot = certificate_snapshot_load($account, $node);
-
-  // Dev preview.
+  // Preview.
   $preview = isset($_GET['preview']) && user_access('administer certificates');
 
-  // Group support.
-  if ($node->og_groups) {
-    $group = node_load(key($node->og_groups));
-  }
-
-  // If so, grab from the DB. If not, generate a new one.
-  if ($snapshot && variable_get('certificate_snapshots', 0)) {
+  // See if user already has a snapshotted certificate for a course. If so, grab
+  // from the DB. If not, generate a new one.
+  if (variable_get('certificate_snapshots', 0) && $snapshot = certificate_snapshot_load($account, $node)) {
     $output = $snapshot['snapshot'];
   }
   else {
-    // Do matches on fieldmapping
-    // Find certificate based on set profile field. This is lowest priority
-    // Find certificate based on node setting. This is highest priority
-    $profile = _certificate_get_user_profile($account);
-
-    // Get existing node-specific template settings.
-    $node_template_settings = $node->certificate['node_settings'];
-
-    // Get certificate 'type' field.
-    $certificate_type_field = certificate_get_selected_type();
-
-    if (variable_get('certificate_field_grouping', 0)) {
-      // Get user's 'type' from $account.
-      $user_types = $profile->{$certificate_type_field};
-      $field_options_array = variable_get('certificate_field_groups', array());
-      foreach ($field_options_array as $key => $fieldgroup) {
-        foreach ($fieldgroup as $value) {
-          foreach ($user_types as $user_type) {
-            $user_type = $user_type['value'];
-            if ($user_type == $value) {
-              // This node has settings saved in the DB - use the per-node settings?
-              if ($node_template_settings[$key]) {
-                $template_id = $node_template_settings[$key];
-              }
-              // Else this node doesn't have settings saved in the DB yet - use the global settings?
-              else {
-                $template_id = variable_get('certificate_type_' . $key . '_template', null);
-              }
-              // Found a match, do not continue.
-              break 3;
-            }
-          }
-        }
-      }
+    $hooks = module_invoke_all('certificate_map_options');
+    $sql = "select * from {certificate_node} where nid = %d or nid = %d order by nid asc";
+    $result = db_query($sql, 0, $node->nid);
+    $mapping = array();
+    while ($row = db_fetch_object($result)) {
+      $mapping[$row->mapper][$row->type] = $row->template;
     }
-    else {
-      // Get user's 'type' from $account.
-      $user_type = $profile->{$certificate_type_field}[0]['value'];
-      // Get certificate template that matches type.
-      // Get field's options from types selection.
-      // This returns groups if set to grouping.
-      $field_options_array = certificate_get_selected_type_options();
-
-      // Get form element names based on selected field's options (if field is selected).
-      if (is_array($field_options_array) && $account->uid != 0) {
-        foreach ($field_options_array as $key => $option_name) {
-          if ($key == $user_type) {
-            // This node has settings saved in the DB - use the per-node settings?
-            if ($node_template_settings[$key]) {
-              $template_id = $node_template_settings[$key];
-            }
-            // Else this node doesn't have settings saved in the DB yet - use the global settings?
-            else {
-              $template_id = variable_get('certificate_type_' . $key . '_template', null);
-            }
-          }
-        }
-      }
-    }
-
-    // If no local mappings, try matching with criteria.
-    if (!$template_id) {
-      $sql = "select * from {certificate_criteria} cc
-      left join {certificate_types} ct on ct.type_id = cc.type_id
-      order by cc.type_id";
-      $query = db_query($sql);
-      $certificate_types = array();
-      while ($criteria = db_fetch_object($query)) {
-        $criteria->check_key = unserialize($criteria->check_key);
-        $criteria->check_key = $criteria->check_key[1];
-        $certificate_types[$criteria->type_id][$criteria->check_id] = $criteria;
-      }
-      foreach ($certificate_types as $certificate_type) {
-        $use_this_type = true;
-        foreach ($certificate_type as $criteria) {
-          // Checking a field value: $criteria->check_type with key $criteria->check_key against $criteria->check_value.
-          if (empty($criteria->check_key)) {
-            // If no field set, check the node type.
-            if (!(${$criteria->check_type}->type == $criteria->check_value)) {
-              $use_this_type = false;
-            }
-          }
-          else if (!(${$criteria->check_type}->{$criteria->check_key}[0]['value'] == $criteria->check_value)) {
-            $use_this_type = false;
-          }
-        }
-        if ($use_this_type) {
-          $template_id = $criteria->template_id;
-          break;
-        }
-      }
-    }
-
-    // No mappings at all. Pass to other modules.
-    if (!$template_id) {
-      $modules = module_invoke_all('certificate_map_options');
-      foreach ($modules as $map_type => $map) {
-        $mapping = variable_get("certificate_map_{$map_type}", array());
-        $mapping = array_filter($mapping);
-        $matches = module_invoke_all('certificate_map', $node, $user, $map_type, $mapping, array());
-        if (count($matches)) {
-          $template_id = $mapping[$matches[0]]; // First one for now.
-        }
+    
+    foreach (array_keys($hooks) as $map_type) {
+      $matches = module_invoke_all('certificate_map', $node, $user, $map_type, array_keys(array_filter($mapping[$map_type])), array());
+      if (count($matches)) {
+        $template_id = $mapping[$map_type][$matches[0]]; // First one for now.
       }
     }
 

@@ -65,13 +65,19 @@ function hook_certificate_map_options() {
  *
  * Return the key of the mapping to use.
  *
+ * @param stdClass $node
+ * @param stdClass $user
+ * @param string $map_type
+ * @param array $options
+ *   An array of keys that the user wants to check.
+ *
  * @return String
  *   Key of matched mapping.
  */
 function hook_certificate_map($node, $user, $map_type, $options) {
   if ($map_type == 'mood') {
-    foreach ($options as $key => $value) {
-      if ($user->mood == $value) {
+    foreach ($options as $key) {
+      if ($user->mood == $key) {
         // User's mood matched, so return the key. Certificate module will then
         // match the key to the template ID.
         return $key;
