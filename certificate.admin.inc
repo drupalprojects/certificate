@@ -133,6 +133,7 @@ function certificate_mapping_form(&$form, &$form_state) {
     $nid = 0;
   }
 
+  $stored = array();
   $sql = "select * from {certificate_node} cn where nid = %d";
   $result = db_query($sql, $nid);
   while ($row = db_fetch_object($result)) {
@@ -147,8 +148,6 @@ function certificate_mapping_form(&$form, &$form_state) {
     $options[$cert['nid']] = $cert['title'];
   }
 
-  $fieldgroups = variable_get('certificate_field_groups', array());
-
   foreach ($mappings as $map_type => $map) {
     $form['certificate']['map'][$map_type] = array(
       '#title' => $map['title'],
@@ -160,10 +159,10 @@ function certificate_mapping_form(&$form, &$form_state) {
     );
 
     if (count($map['options'])) {
-      foreach ($map['options'] as $key => $value) {
+      foreach ($map['options'] as $key => $title) {
         $form['certificate']['map'][$map_type][$key] = array(
           '#type' => 'select',
-          '#title' => $fieldgroups[$key],
+          '#title' => $title,
           '#options' => $options,
           '#default_value' => $stored[$map_type][$key],
         );
@@ -434,6 +433,7 @@ function certificate_field_grouping_delete_page($key) {
 }
 
 function certificate_templates_list() {
+  $certificates = array();
   $l = l('Create new certificate', 'node/add/certificate', array('query' => drupal_get_destination()));
   $sql = "select * from {node} where type='certificate'";
   $result = db_query($sql);

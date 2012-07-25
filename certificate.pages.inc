@@ -79,7 +79,7 @@ function certificate_single($account, $node) {
       // Print module gets around this because the meta tag in Drupal is already
       // set - but here, we have to add it since we are only delivering the node
       // body.
-      $output = '<meta charset="utf-8">' . theme('certificate_certificate', $account, $profile, $node, $group, $template);
+      $output = '<meta charset="utf-8">' . theme('certificate_certificate', $node, $account, $template);
 
       // Now save this generated certificate as a 'snapshot' in the database.
       $snapshot['uid'] = $account->uid;
@@ -200,7 +200,7 @@ function certificate_preview($template_id) {
  *
  * @return The certificate HTML with all tokens translated.
  */
-function theme_certificate_certificate($account, $profile, $node, $group, $template) {
+function theme_certificate_certificate($node, $account, $template) {
   $types = array(
     'global' => null,
     'node' => $node,
@@ -208,8 +208,6 @@ function theme_certificate_certificate($account, $profile, $node, $group, $templ
     'certificate' => array(
       'node' => $node,
       'user' => $account,
-      'group' => $group,
-      'profile' => $profile
     ),
   );
 

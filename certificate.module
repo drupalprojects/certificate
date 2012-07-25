@@ -354,10 +354,12 @@ function certificate_course_node_template_settings($nid) {
  */
 function certificate_form_alter(&$form, &$form_state, $form_id) {
   $type = basename($form_id, '_node_form');
-  if (certificate_node_is_certifiable($form['#node']) && strpos($form_id, '_node_form') !== FALSE) {
-// Add per-node certificate settings.
-    module_load_include('inc', 'certificate', 'certificate.admin');
-    certificate_alter_node_form($form, $form_state);
+  if (isset($form['#node'])) {
+    if (certificate_node_is_certifiable($form['#node']) && strpos($form_id, '_node_form') !== FALSE) {
+      // Add per-node certificate settings.
+      module_load_include('inc', 'certificate', 'certificate.admin');
+      certificate_alter_node_form($form, $form_state);
+    }
   }
 }
 
@@ -471,7 +473,7 @@ function certificate_content_extra_fields($type_name) {
 /**
  * @todo make $types more generic.
  */
-function certificate_node_is_certifiable(&$node) {
+function certificate_node_is_certifiable($node) {
   return variable_get("certificate_certifiable_{$node->type}", 0);
 }
 
@@ -603,6 +605,8 @@ function certificate_reset_certificates_action($object, $context) {
  */
 function certificate_can_access_certificate($node, &$account = NULL) {
   static $cert_access = array();
+  $found_true = NULL;
+  $found_false = NULL;
 
   if (!$account) {
     global $user;
