@@ -27,7 +27,7 @@ function hook_access_certificate($node, $user) {
 /**
  * Implementation of certificate_template_id_alter().
  *
- * Arbitrarily override the template ID that will be loaded when the user
+ * Single the template ID that will be loaded when the user
  * downloads a certificate.
  */
 function hook_certificate_template_id_alter(&$template_id, $node, $user) {

@@ -717,10 +717,10 @@ function certificate_certificate_map_options() {
     );
   }
 
-  $options['override'] = array(
-    'title' => 'Override',
+  $options['manual'] = array(
+    'title' => 'Manual',
     'description' => 'Override any certificate selection with this single certificate.',
-    'options' => array('override' => 'Override'),
+    'options' => array('manual' => 'Manual'),
   );
 
   return $options;
@@ -760,9 +760,9 @@ function certificate_certificate_map($node, $user, $map_type, $options) {
     }
   }
 
-  if ($map_type == 'override') {
-    if ($options[0] == 'override') {
-      return 'override';
+  if ($map_type == 'manual') {
+    if ($options[0] == 'manual') {
+      return 'manual';
     }
   }
 }
