@@ -61,9 +61,9 @@ function certificate_single($account, $node) {
     while ($row = db_fetch_object($result)) {
       $mapping[$row->mapper][$row->type] = $row->template;
     }
-    
+
     foreach (array_keys($hooks) as $map_type) {
-      $matches = module_invoke_all('certificate_map', $node, $user, $map_type, array_keys(array_filter($mapping[$map_type])), array());
+      $matches = module_invoke_all('certificate_map', $node, $user, $map_type, array_keys(array_filter((array) $mapping[$map_type])), array());
       if (count($matches)) {
         $template_id = $mapping[$map_type][$matches[0]]; // First one for now.
       }
