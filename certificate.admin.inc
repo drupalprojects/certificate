@@ -344,6 +344,9 @@ function certificate_field_grouping_form() {
       }
     }
   }
+  else {
+    $form['disabled']['#value'] = '<p>' . t('Please enable content_profile to work with profile field grouping.') . '</p>';
+  }
 
   $form['submit'] = array(
     '#value' => 'Submit',
