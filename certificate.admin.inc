@@ -2,10 +2,7 @@
 
 /**
  * @file
- * Administrative pages for the module.
- */
-/**
- * =================== Certificates template-mapping form (used by certificate_settings_form() & node form alter) ===================
+ * Administrative pages for Certificate module.
  */
 
 /**
@@ -98,10 +95,6 @@ function certificate_type_mapping_form($form_state, $node = NULL) {
 }
 
 /**
- * =================== Certificates alter node form (using template-mapping form) ===================
- */
-
-/**
  * Alters the node form to inject the appropriate per-node template settings.
  */
 function certificate_alter_node_form(&$form, &$form_state) {
@@ -126,7 +119,7 @@ function certificate_alter_node_form(&$form, &$form_state) {
  * Add mapping elements to a form.
  */
 function certificate_mapping_form(&$form, &$form_state) {
-  if ($form['nid']['#value']) {
+  if (isset($form['nid']['#value'])) {
     $nid = $form['nid']['#value'];
   }
   else {
@@ -143,7 +136,7 @@ function certificate_mapping_form(&$form, &$form_state) {
   // Custom (module-provided) mappings.
   $mappings = module_invoke_all('certificate_map_options');
 
-  $options = array('');
+  $options = array('' => '- no certificate -');
   foreach (certificate_certificate_load_all() as $cert) {
     $options[$cert['nid']] = $cert['title'];
   }
@@ -164,7 +157,7 @@ function certificate_mapping_form(&$form, &$form_state) {
           '#type' => 'select',
           '#title' => $title,
           '#options' => $options,
-          '#default_value' => $stored[$map_type][$key],
+          '#default_value' => isset($stored[$map_type][$key]) ? $stored[$map_type][$key] : NULL,
         );
       }
     }
@@ -177,11 +170,7 @@ function certificate_mapping_form(&$form, &$form_state) {
 }
 
 /**
- * =================== Certificates settings form @ admin/build/certificates/mapping ===================
- */
-
-/**
- * Form for field mapping allowed values to certificate templates.
+ * Form for global mappings.
  */
 function certificate_settings_form(&$form_state) {
   $form['certificate']['#tree'] = TRUE;
@@ -191,14 +180,15 @@ function certificate_settings_form(&$form_state) {
 
   $form['submit'] = array(
     '#type' => 'submit',
-    '#value' => t('Submit'),
+    '#value' => t('Update'),
   );
 
   return $form;
 }
 
 /**
- * Save the global certificate mappings.
+ * Save the certificate mappings. For global mappings, we use node ID zero to
+ * store it in the database.
  */
 function certificate_settings_form_submit($form, &$form_state) {
   certificate_update_node_mappings(0, $form_state['values']['certificate']['map']);
@@ -252,21 +242,6 @@ function theme_certificate_overview_form($form) {
 }
 
 /**
- * =================== Certificates User certicates history form @ admin/build/certificates/history ===================
- */
-
-/**
- * Build a form to record the history of all user's certificates.
- */
-function certificate_history_form(&$form_state) {
-  $form['test'] = array(
-    '#value' => t(''),
-  );
-
-  return $form;
-}
-
-/**
  * Theme the form as a table.
  */
 function theme_certificate_history_form($form) {
@@ -287,7 +262,7 @@ function theme_certificate_history_form($form) {
 }
 
 /**
- * Form to select which field values are part of which group.
+ * Form to select which content profile field values are part of which group.
  */
 function certificate_field_grouping_form() {
   $form = array();
@@ -315,20 +290,20 @@ function certificate_field_grouping_form() {
 
     $form['map']['#tree'] = TRUE;
     // Create multiselect box for each field key.
-    foreach ($fieldgroups as $groupname => $mapping) {
-      $form['map'][$groupname] = array(
+    foreach ($groupsinfo as $key => $title) {
+      $form['map'][$key] = array(
         '#type' => 'fieldset',
-        '#title' => $groupsinfo[$groupname],
+        '#title' => $title,
         '#tree' => TRUE,
         '#collapsible' => TRUE,
         '#collapsed' => TRUE,
       );
-      foreach ($info['content types'] as $key => $type) {
-        if (in_array($key, $profile_types)) {
+      foreach ($info['content types'] as $ckey => $type) {
+        if (in_array($ckey, $profile_types)) {
           foreach ($type['fields'] as $field_key => $field) {
             $options = optionwidgets_options($field, FALSE);
             if (!empty($options)) {
-              $form['map'][$groupname][$field_key] = array(
+              $form['map'][$key][$field_key] = array(
                 '#title' => check_plain($field['widget']['label']),
                 '#type' => 'select',
                 '#multiple' => TRUE,
@@ -336,7 +311,7 @@ function certificate_field_grouping_form() {
                 // This is a trick to set the default value to ' ', which doesn't
                 // match anything. This was accidentally causing 'None' to
                 // actually be selected as a mapping.
-                '#default_value' => isset($mapping[$field_key]) ? $mapping[$field_key] : array(),
+                '#default_value' => isset($fieldgroups[$key][$field_key]) ? $fieldgroups[$key][$field_key] : array(),
               );
             }
           }
@@ -356,6 +331,9 @@ function certificate_field_grouping_form() {
   return $form;
 }
 
+/**
+ * Save content profile field grouping.
+ */
 function certificate_field_grouping_form_submit(&$form, &$form_state) {
   variable_set('certificate_field_grouping', $form_state['values']['map']);
 
@@ -385,6 +363,9 @@ function certificate_field_grouping_add_form() {
   return $form;
 }
 
+/**
+ * Validate the fieldgroup machine name.
+ */
 function certificate_field_grouping_add_form_validate(&$form, &$form_state) {
   $fieldgroup_name = $form_state['values']['fieldgroup_name'];
   $fieldgroups = variable_get('certificate_field_groups', array());
@@ -394,6 +375,9 @@ function certificate_field_grouping_add_form_validate(&$form, &$form_state) {
   }
 }
 
+/**
+ * Form to add another field group.
+ */
 function certificate_field_grouping_add_form_submit(&$form, &$form_state) {
   $fieldgroup_name = $form_state['values']['fieldgroup_name'];
   $fieldgroup_title = $form_state['values']['fieldgroup_title'];
@@ -405,10 +389,9 @@ function certificate_field_grouping_add_form_submit(&$form, &$form_state) {
   drupal_goto('admin/build/certificates/mapping/groups');
 }
 
-function certificate_field_grouping_add_page() {
-  return drupal_get_form('certificate_field_grouping_add_form');
-}
-
+/**
+ * Fieldgroup deletion.
+ */
 function certificate_field_grouping_delete_form_submit(&$form, &$form_state) {
   $fieldgroup_name = $form_state['values']['fieldgroup_name'];
   $fieldgroup_title = $form_state['values']['fieldgroup_title'];
@@ -420,6 +403,9 @@ function certificate_field_grouping_delete_form_submit(&$form, &$form_state) {
   drupal_goto('admin/build/certificates/mapping/groups');
 }
 
+/**
+ * Fieldgroup deletion form.
+ */
 function certificate_field_grouping_delete_form($form, $key) {
   $form = array();
 
@@ -432,10 +418,9 @@ function certificate_field_grouping_delete_form($form, $key) {
   return confirm_form($form, "Delete field group $key?", 'admin/build/certificates/mapping/groups', 'This action cannot be undone. Access to matched certificates will be lost.', 'Delete', 'Cancel');
 }
 
-function certificate_field_grouping_delete_page($key) {
-  return drupal_get_form('certificate_field_grouping_delete_form', $key);
-}
-
+/**
+ * List of certificates with links to add and edit.
+ */
 function certificate_templates_list() {
   $certificates = array();
   $l = l('Create new certificate', 'node/add/certificate', array('query' => drupal_get_destination()));
@@ -454,6 +439,11 @@ function certificate_templates_list() {
   return $l . theme_table(array(t('Title'), t('Edit'), t('Delete'), t('Preview')), $certificates);
 }
 
+/**
+ * General settings form.
+ *
+ * Currently only has the option to enable snapshots.
+ */
 function certificate_admin_settings_form() {
   $form = array();
 

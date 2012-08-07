@@ -48,9 +48,9 @@ function certificate_access($op, $node, $account) {
 }
 
 function certificate_form(&$node, $form_state) {
-// The site admin can decide if this node type has a title and body, and how
-// the fields should be labeled. We need to load these settings so we can
-// build the node form correctly.
+  // The site admin can decide if this node type has a title and body, and how
+  // the fields should be labeled. We need to load these settings so we can
+  // build the node form correctly.
   $type = node_get_types('type', $node);
 
   if ($type->has_title) {
@@ -64,14 +64,14 @@ function certificate_form(&$node, $form_state) {
   }
 
   if ($type->has_body) {
-// In Drupal 6, we use node_body_field() to get the body and filter
-// elements. This replaces the old textarea + filter_form() method of
-// setting this up. It will also ensure the teaser splitter gets set up
-// properly.
+    // In Drupal 6, we use node_body_field() to get the body and filter
+    // elements. This replaces the old textarea + filter_form() method of
+    // setting this up. It will also ensure the teaser splitter gets set up
+    // properly.
     $form['body_field'] = node_body_field($node, $type->body_label, $type->min_word_count);
   }
 
-// Now we define the form elements specific to our node type.
+  // Now we define the form elements specific to our node type.
   $form['certificate']['#tree'] = TRUE;
   $form['certificate']['orientation'] = array(
     '#type' => 'radios',
@@ -89,26 +89,11 @@ function certificate_form(&$node, $form_state) {
 }
 
 /**
- * Implementation of hook_help().
- */
-function certificate_help($path, $arg) {
-  if ($path == 'admin/help#certificate') {
-    $txt = 'If you install the !advanced_help module, Views will provide more and better help.';
-    $link = l('Advanced help', 'http://drupal.org/project/advanced_help');
-    $replace = array(
-      '!advanced_help' => $link
-    );
-    return '<p>' . t($txt, $replace) . '</p>';
-  }
-}
-
-/**
  * Implementation of hook_menu().
  */
 function certificate_menu() {
   $items = array();
 
-// Certificate types.
   $items['admin/build/certificates'] = array(
     'title' => 'Certificates',
     'access arguments' => array('administer certificates'),
@@ -154,21 +139,25 @@ function certificate_menu() {
   $items['admin/build/certificates/mapping/groups/add'] = array(
     'title' => 'Add field group',
     'description' => 'Add a field group',
-    'page callback' => 'certificate_field_grouping_add_page',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('certificate_field_grouping_add_form'),
     'access arguments' => array('administer certificates'),
     'file' => 'certificate.admin.inc',
     'type' => MENU_LOCAL_TASK,
   );
 
-  $items['admin/build/certificates/mapping/groups/delete/%'] = array(
+  /*
+    $items['admin/build/certificates/mapping/groups/delete/%'] = array(
     'title' => 'Delete field group',
     'description' => 'Delete a field group',
-    'page callback' => 'certificate_field_grouping_delete_page',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('certificate_field_grouping_delete_form'),
     'page arguments' => array(6),
     'access arguments' => array('administer certificates'),
     'file' => 'certificate.admin.inc',
     'type' => MENU_LOCAL_TASK,
-  );
+    );
+   */
 
   $items['admin/build/certificates/settings'] = array(
     'title' => 'Settings',
@@ -238,87 +227,27 @@ function certificate_perm() {
  */
 function certificate_theme() {
   $items = array();
-  $items['certificate_history_form'] = array(
-    'arguments' => array('form' => array()),
-    'file' => 'certificate.admin.inc',
-  );
-// Keep for now - we may want to theme the output specifically for Moodle.
+
   $items['certificate_certificate'] = array(
     'arguments' => array('certificate' => array()),
     'file' => 'certificate.pages.inc',
   );
+
   $items['certificate_admin_clear_form'] = array(
     'arguments' => array('form' => NULL),
     'file' => 'certificate.admin.inc',
   );
+
   return $items;
-}
-
-/**
- * Helper function to match template to certificate type.
- *
- * @return
- *  The content profile node object.
- *
- * @TODO: this currently assumes the content profile is of type 'profile'.
- * We'll want to make that configurable (later).
- */
-function _certificate_get_user_profile($account) {
-  $uid = $account->uid;
-// Curently we're using only using content-profile for this feature.
-  if (module_exists('content_profile')) {
-    $profile = content_profile_load('profile', $uid);
-    return $profile;
-  }
-  return FALSE;
-}
-
-/**
- * Define Fields.
- */
-function certificate_fields() {
-  $field_options = array();
-
-  $field_options[] = 'no field';
-
-  foreach (content_fields() as $key => $field) {
-// If field isn't a profile field with allowed values, do not allow it to be selectable. It wouldn't work anyways.
-    if ($field['type_name'] == 'profile' && ($field['allowed_values'] != '' || $field['allowed_values_php'] != '')) {
-      $field_options[$key] = $field['widget']['label'];
-    }
-  }
-  return $field_options;
-}
-
-/**
- * Implementation of hook_function_load().
- *
- * Menu load handler for an certificate type.
- */
-function certificate_set_load($id) {
-  $sql = "SELECT * FROM {certificate_types} ct
-    left join {node} certificate on certificate.nid = ct.template_id
-    WHERE type_id = %d";
-  $result = db_query($sql, $id);
-  if ($type = db_fetch_object($result)) {
-    return $type;
-  }
-  else {
-    return FALSE;
-  }
 }
 
 /**
  * Public loader function for the full collection of certificates.
  *
- * In situations where the module's data rarely changes, or is being used
- * frequently (for example, loaded and processed on every page load), this
- * is a prime candidate for caching. See The Beginner's Guide to Caching at
- * http://www.lullabot.com/articles/a_beginners_guide_to_caching_data for more
- * details.
+ * @todo cache?
  *
  * @return
- *   An array of all certificates, keyed by id.
+ *   An array of all certificates, keyed by node (certificate) ID.
  */
 function certificate_certificate_load_all() {
   $sql = "SELECT *,nid as cid FROM {node} node where type='certificate'";
@@ -353,7 +282,6 @@ function certificate_course_node_template_settings($nid) {
  * Implements hook_form_alter for course nodes.
  */
 function certificate_form_alter(&$form, &$form_state, $form_id) {
-  $type = basename($form_id, '_node_form');
   if (isset($form['#node'])) {
     if (certificate_node_is_certifiable($form['#node']) && strpos($form_id, '_node_form') !== FALSE) {
       // Add per-node certificate settings.
@@ -381,7 +309,7 @@ function certificate_form_alter(&$form, &$form_state, $form_id) {
 
 function certificate_form_certificate_node_form_alter(&$form, &$form_state) {
   if (module_exists('token')) {
-// Embed token help.
+    // Embed token help.
     $form['certificate_tokens'] = array(
       '#title' => 'Certificate tokens',
       '#type' => 'fieldset',
@@ -390,12 +318,13 @@ function certificate_form_certificate_node_form_alter(&$form, &$form_state) {
       '#value' => theme('token_tree', array('global', 'node', 'user', 'certificate'), FALSE),
     );
   }
-// No preview - we want users to see it in PDF for accuracy.
+
+  // No preview - we want users to see it in PDF for accuracy.
   $form['buttons']['preview'] = NULL;
 }
 
 /**
- * Submit handler to update node template mappings.
+ * Submit handler to update mappings.
  */
 function certificate_update_node_mappings($nid, array $node_settings = NULL) {
   if (is_array($node_settings)) {
@@ -423,6 +352,7 @@ function certificate_nodeapi(&$node, $op, $teaser = NULL, $page = NULL) {
       case 'insert':
       case 'update':
         if (certificate_node_is_certifiable($node)) {
+          // Update node mappings from a certifiable activity.
           certificate_update_node_mappings($node->nid, $node->certificate['map']);
         }
         break;
@@ -438,6 +368,7 @@ function certificate_nodeapi(&$node, $op, $teaser = NULL, $page = NULL) {
 
       case 'view':
         if (certificate_can_access_certificate($node)) {
+          // Add a download certificate link to the node content.
           $node->content['certificate']['#value'] = '<span class="certificate-link">' . l(t('Download certificate'), "node/{$node->nid}/certificate") . '</span>';
         }
         break;
@@ -448,6 +379,7 @@ function certificate_nodeapi(&$node, $op, $teaser = NULL, $page = NULL) {
     switch ($op) {
       case 'insert':
       case 'update':
+        // Save the certificate settings.
         $record = $node->certificate;
         $record['nid'] = $node->nid;
         if (db_result(db_query("select 1 from {certificate_node_settings} where nid = %d", $node->nid))) {
@@ -465,9 +397,13 @@ function certificate_nodeapi(&$node, $op, $teaser = NULL, $page = NULL) {
 
 /**
  * Implementation of hook_content_extra_fields().
+ * 
  * Allow the certificate download link to be sorted in the node edit forms.
  */
 function certificate_content_extra_fields($type_name) {
+  $extras = array();
+
+  $node = new stdClass;
   $node->type = $type_name;
   if (certificate_node_is_certifiable($node)) {
     $extras['certificate'] = array(
@@ -487,7 +423,9 @@ function certificate_content_extra_fields($type_name) {
 }
 
 /**
- * @todo make $types more generic.
+ * Check if node is certifiable.
+ *
+ * @return bool
  */
 function certificate_node_is_certifiable($node) {
   return variable_get("certificate_certifiable_{$node->type}", 0);
@@ -532,11 +470,10 @@ function certificate_snapshot_save($snapshot) {
 /**
  * Remove snapshot.
  *
- * @param $account
- * @param $node
+ * @param stdClass $account
+ * @param stdClass $node
  *
- * @return
- *   true
+ * @return bool
  */
 function certificate_snapshot_delete($account, $node) {
   $sql = "DELETE FROM {certificate_snapshots} WHERE uid = %d AND nid = %d";
@@ -544,15 +481,18 @@ function certificate_snapshot_delete($account, $node) {
   return TRUE;
 }
 
+/**
+ * Delete all snapshots on a node.
+ *
+ * @param stdClass $node
+ *
+ * @return bool
+ */
 function certificate_snapshot_delete_by_node($node) {
   $sql = "DELETE FROM {certificate_snapshots} WHERE nid = %d";
   db_query($sql, $node->nid);
   return TRUE;
 }
-
-/**
- *  Actions
- */
 
 /**
  * Implementation of hook_action_info().
@@ -562,7 +502,7 @@ function certificate_action_info() {
 
   $info['certificate_reset_certificates_action'] = array(
     'type' => 'node',
-    'description' => t('Reset certificate snapshots for this event'),
+    'description' => t('Reset certificate snapshots for this node.'),
     'configurable' => FALSE,
     'hooks' => array(
       'nodeapi' => array('insert', 'update'),
@@ -598,12 +538,15 @@ function certificate_rules_award_certificate($node, $user) {
   $certificate_award = TRUE;
 }
 
+/**
+ * Action to delete certificate snapshots on a node.
+ */
 function certificate_reset_certificates_action($object, $context) {
   $node = $object;
 
   if ($node->nid && is_numeric($node->nid)) {
     certificate_snapshot_delete_by_node($node);
-    watchdog('action', 'Reset certificate snapshots for: %event.', array('%event' => $node->title));
+    watchdog('action', 'Reset certificate snapshots for: %node.', array('%node' => $node->title));
   }
   else {
     //print_r("No Node");
@@ -672,6 +615,11 @@ function certificate_can_access_certificate($node, &$account = NULL) {
   return FALSE;
 }
 
+/**
+ * Implements hook_user().
+ *
+ * Clean up after user deletion.
+ */
 function certificate_user($op, &$edit, &$account, $category = NULL) {
   if ($op == 'delete') {
     $sql = "delete from {certificate_snapshots} where uid = %d";
@@ -721,21 +669,17 @@ function certificate_certificate_map_options() {
 
   if (module_exists('content_profile')) {
     $fieldgroups = variable_get('certificate_field_groups', array());
-    $profile_group_options = drupal_map_assoc(array_keys($fieldgroups));
 
-    $fieldname = variable_get('certificate_field_certificate_type', '');
-    $field = content_fields($fieldname);
-    $allowed = content_allowed_values($field);
     $options['content_profile'] = array(
       'title' => "Content profile",
-      'options' => $profile_group_options,
-      'description' => "When a user has this value selected in their content profile, the selected certificate will be awarded.",
+      'options' => $fieldgroups,
+      'description' => t('If a user matches a value in a field group, the selected certificate will be awarded.'),
     );
   }
 
   $options['manual'] = array(
     'title' => 'Manual',
-    'description' => 'Override any certificate selection with this single certificate.',
+    'description' => t('Select a single certificate to award to the user.'),
     'options' => array('manual' => 'Manual'),
   );
 

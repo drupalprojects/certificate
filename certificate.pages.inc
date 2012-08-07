@@ -1,11 +1,8 @@
 <?php
 
 /**
- * @file
- * Builds the module's user-facing pages.
- *
- * Contains a simple page callback and themable function for rendering a single
- * certificate.
+ * @file certificate.pages.inc
+ * Functions for generating certificates.
  */
 
 /**
@@ -97,13 +94,7 @@ function certificate_single($account, $node) {
       global $baseurl;
       $ref = parse_url($_SERVER['HTTP_REFERER']);
       $ref['path'] = str_replace($baseurl, '', $ref['path']);
-      if (preg_match('#^/moodle#', $ref['path'])) {
-        print $no_match_string;
-        exit;
-      }
-      else {
-        return $no_match_string;
-      }
+      return $no_match_string;
     }
   }
 
