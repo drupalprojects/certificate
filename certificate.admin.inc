@@ -60,7 +60,7 @@ function certificate_type_mapping_form($form_state, $node = NULL) {
       $form['nogroups'] = array(
         '#prefix' => '<p>',
         '#suffix' => '</p>',
-        '#value' => t("Please go to !groups to configure certificate field mapping groups.", array('!groups' => l('groups', 'admin/settings/certificate/mapping/groups'))),
+        '#value' => t("Please go to !groups to configure certificate field mapping groups.", array('!groups' => l('groups', 'admin/build/certificates/mapping/groups'))),
       );
     }
   }
@@ -69,7 +69,7 @@ function certificate_type_mapping_form($form_state, $node = NULL) {
     $field_options_array = certificate_get_selected_type_options();
     if (arg(0) == 'node' && !count($field_options_array)) {
       $form['#type'] = 'markup';
-      $form['#value'] = "<div>" . t("Please !link before using certificates.", array('!link' => l('set up field mappings', 'admin/settings/certificate/mapping'))) . "</div>";
+      $form['#value'] = "<div>" . t("Please !link before using certificates.", array('!link' => l('set up field mappings', 'admin/build/certificates/mapping'))) . "</div>";
     }
 
     // Generate form elements based on selected field's allowed values.
@@ -177,7 +177,7 @@ function certificate_mapping_form(&$form, &$form_state) {
 }
 
 /**
- * =================== Certificates settings form @ admin/settings/certificate/mapping ===================
+ * =================== Certificates settings form @ admin/build/certificates/mapping ===================
  */
 
 /**
@@ -252,7 +252,7 @@ function theme_certificate_overview_form($form) {
 }
 
 /**
- * =================== Certificates User certicates history form @ admin/settings/certificate/history ===================
+ * =================== Certificates User certicates history form @ admin/build/certificates/history ===================
  */
 
 /**
@@ -292,52 +292,53 @@ function theme_certificate_history_form($form) {
 function certificate_field_grouping_form() {
   $form = array();
 
-  $groupsinfo = variable_get('certificate_field_groups', array());
-  $fieldgroups = variable_get('certificate_field_grouping', array());
-  $form['certificate_add_new_group'] = array(
-    '#prefix' => '<div>',
-    '#suffix' => '</div>',
-    '#type' => 'markup',
-    '#value' => l('Add a new group?', 'admin/settings/certificate/mapping/groups/add'),
-  );
-
-
   // Map against a CCK content_profile field.
   if (module_exists('content_profile')) {
+
+    $groupsinfo = variable_get('certificate_field_groups', array());
+    $fieldgroups = variable_get('certificate_field_grouping', array());
+    $form['certificate_add_new_group'] = array(
+      '#prefix' => '<div>',
+      '#suffix' => '</div>',
+      '#type' => 'markup',
+      '#value' => l('Add a new group?', 'admin/build/certificates/mapping/groups/add'),
+    );
+
+
     $types = content_types();
     foreach ($types as $key => $type) {
       if (variable_get('content_profile_use_' . $key, 0)) {
         $profile_types[] = $key;
       }
     }
-  }
-  $info = _content_type_info();
+    $info = _content_type_info();
 
-  $form['map']['#tree'] = TRUE;
-  // Create multiselect box for each field key.
-  foreach ($fieldgroups as $groupname => $mapping) {
-    $form['map'][$groupname] = array(
-      '#type' => 'fieldset',
-      '#title' => $groupsinfo[$groupname],
-      '#tree' => TRUE,
-      '#collapsible' => TRUE,
-      '#collapsed' => TRUE,
-    );
-    foreach ($info['content types'] as $key => $type) {
-      if (in_array($key, $profile_types)) {
-        foreach ($type['fields'] as $field_key => $field) {
-          $options = optionwidgets_options($field, FALSE);
-          if (!empty($options)) {
-            $form['map'][$groupname][$field_key] = array(
-              '#title' => check_plain($field['widget']['label']),
-              '#type' => 'select',
-              '#multiple' => TRUE,
-              '#options' => $options,
-              // This is a trick to set the default value to ' ', which doesn't
-              // match anything. This was accidentally causing 'None' to
-              // actually be selected as a mapping.
-              '#default_value' => isset($mapping[$field_key]) ? $mapping[$field_key] : array(),
-            );
+    $form['map']['#tree'] = TRUE;
+    // Create multiselect box for each field key.
+    foreach ($fieldgroups as $groupname => $mapping) {
+      $form['map'][$groupname] = array(
+        '#type' => 'fieldset',
+        '#title' => $groupsinfo[$groupname],
+        '#tree' => TRUE,
+        '#collapsible' => TRUE,
+        '#collapsed' => TRUE,
+      );
+      foreach ($info['content types'] as $key => $type) {
+        if (in_array($key, $profile_types)) {
+          foreach ($type['fields'] as $field_key => $field) {
+            $options = optionwidgets_options($field, FALSE);
+            if (!empty($options)) {
+              $form['map'][$groupname][$field_key] = array(
+                '#title' => check_plain($field['widget']['label']),
+                '#type' => 'select',
+                '#multiple' => TRUE,
+                '#options' => $options,
+                // This is a trick to set the default value to ' ', which doesn't
+                // match anything. This was accidentally causing 'None' to
+                // actually be selected as a mapping.
+                '#default_value' => isset($mapping[$field_key]) ? $mapping[$field_key] : array(),
+              );
+            }
           }
         }
       }
@@ -398,7 +399,7 @@ function certificate_field_grouping_add_form_submit(&$form, &$form_state) {
   $fieldgroups[$fieldgroup_name] = $fieldgroup_title;
   variable_set('certificate_field_groups', $fieldgroups);
   drupal_set_message(t('Fieldgroup %f created.', array('%f' => $fieldgroup_name)));
-  drupal_goto('admin/settings/certificate/mapping/groups');
+  drupal_goto('admin/build/certificates/mapping/groups');
 }
 
 function certificate_field_grouping_add_page() {
@@ -413,7 +414,7 @@ function certificate_field_grouping_delete_form_submit(&$form, &$form_state) {
   variable_set('certificate_field_groups', $fieldgroups);
 
   drupal_set_message(t('Fieldgroup %f deleted.', array('%f' => $fieldgroup_name)));
-  drupal_goto('admin/settings/certificate/mapping/groups');
+  drupal_goto('admin/build/certificates/mapping/groups');
 }
 
 function certificate_field_grouping_delete_form($form, $key) {
@@ -425,7 +426,7 @@ function certificate_field_grouping_delete_form($form, $key) {
     '#access' => FALSE,
   );
 
-  return confirm_form($form, "Delete field group $key?", 'admin/settings/certificate/mapping/groups', 'This action cannot be undone. Access to matched certificates will be lost.', 'Delete', 'Cancel');
+  return confirm_form($form, "Delete field group $key?", 'admin/build/certificates/mapping/groups', 'This action cannot be undone. Access to matched certificates will be lost.', 'Delete', 'Cancel');
 }
 
 function certificate_field_grouping_delete_page($key) {
@@ -443,7 +444,7 @@ function certificate_templates_list() {
       'title' => $row['title'],
       'edit' => l(t('edit'), "node/{$row['nid']}/edit?{$destination}", array('attributes' => array('class' => 'edit-link'))),
       'delete' => l(t('delete'), "node/{$row['nid']}/delete?{$destination}", array('attributes' => array('class' => 'delete-link'))),
-      'preview' => l(t('PDF'), "admin/settings/certificate/templates/preview/{$row['nid']}", array('attributes' => array('class' => 'preview-link'))),
+      'preview' => l(t('PDF'), "admin/build/certificates/templates/preview/{$row['nid']}", array('attributes' => array('class' => 'preview-link'))),
     );
   }
 
@@ -452,20 +453,6 @@ function certificate_templates_list() {
 
 function certificate_admin_settings_form() {
   $form = array();
-
-  $form['certifiable_types'] = array(
-    '#type' => 'fieldset',
-    '#title' => 'Certifiable node types',
-    '#description' => t('Making a node type certifiable will add per-node mappings to its node form.'),
-  );
-
-  foreach (node_get_types() as $type => $info) {
-    $form['certifiable_types']["certificate_certifiable_$type"] = array(
-      '#title' => $info->name,
-      '#type' => 'checkbox',
-      '#default_value' => variable_get("certificate_certifiable_$type", 0),
-    );
-  }
 
   $form['certificate_snapshots'] = array(
     '#title' => 'Use certificate snapshots?',

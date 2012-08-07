@@ -109,14 +109,14 @@ function certificate_menu() {
   $items = array();
 
 // Certificate types.
-  $items['admin/settings/certificate'] = array(
+  $items['admin/build/certificates'] = array(
     'title' => 'Certificates',
     'access arguments' => array('administer certificates'),
     'file' => 'certificate.admin.inc',
     'page callback' => 'certificate_templates_list',
   );
 
-  $items['admin/settings/certificate/templates'] = array(
+  $items['admin/build/certificates/templates'] = array(
     'title' => 'List',
     'access arguments' => array('administer certificates'),
     'type' => MENU_DEFAULT_LOCAL_TASK,
@@ -125,7 +125,7 @@ function certificate_menu() {
     'weight' => -5,
   );
 
-  $items['admin/settings/certificate/mapping'] = array(
+  $items['admin/build/certificates/mapping'] = array(
     'title' => 'Mapping',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('certificate_settings_form'),
@@ -135,13 +135,13 @@ function certificate_menu() {
     'weight' => -4,
   );
 
-  $items['admin/settings/certificate/mapping/list'] = array(
+  $items['admin/build/certificates/mapping/list'] = array(
     'title' => 'Global',
     'type' => MENU_DEFAULT_LOCAL_TASK,
     'weight' => -5,
   );
 
-  $items['admin/settings/certificate/mapping/groups'] = array(
+  $items['admin/build/certificates/mapping/groups'] = array(
     'title' => 'Field groups',
     'description' => 'Set up certificate field groups',
     'page callback' => 'drupal_get_form',
@@ -151,7 +151,7 @@ function certificate_menu() {
     'type' => MENU_LOCAL_TASK,
   );
 
-  $items['admin/settings/certificate/mapping/groups/add'] = array(
+  $items['admin/build/certificates/mapping/groups/add'] = array(
     'title' => 'Add field group',
     'description' => 'Add a field group',
     'page callback' => 'certificate_field_grouping_add_page',
@@ -160,7 +160,7 @@ function certificate_menu() {
     'type' => MENU_LOCAL_TASK,
   );
 
-  $items['admin/settings/certificate/mapping/groups/delete/%'] = array(
+  $items['admin/build/certificates/mapping/groups/delete/%'] = array(
     'title' => 'Delete field group',
     'description' => 'Delete a field group',
     'page callback' => 'certificate_field_grouping_delete_page',
@@ -170,9 +170,9 @@ function certificate_menu() {
     'type' => MENU_LOCAL_TASK,
   );
 
-  $items['admin/settings/certificate/types'] = array(
+  $items['admin/build/certificates/settings'] = array(
     'title' => 'Settings',
-    'description' => 'Select nodes which are certifiable.',
+    'description' => 'Certificate settings.',
     'access arguments' => array('administer certificates'),
     'file' => 'certificate.admin.inc',
     'type' => MENU_LOCAL_TASK,
@@ -180,7 +180,7 @@ function certificate_menu() {
     'page arguments' => array('certificate_admin_settings_form'),
   );
 
-  $items['admin/settings/certificate/clear'] = array(
+  $items['admin/build/certificates/clear'] = array(
     'title' => 'Clear',
     'access arguments' => array('administer certificates'),
     'file' => 'certificate.admin.inc',
@@ -190,7 +190,7 @@ function certificate_menu() {
     'weight' => 99,
   );
 
-  $items['admin/settings/certificate/templates/preview/%'] = array(
+  $items['admin/build/certificates/templates/preview/%'] = array(
     'title' => 'Certificate Preview',
     'description' => 'Display earned certificate for this node',
     'page callback' => 'certificate_preview',
@@ -360,6 +360,22 @@ function certificate_form_alter(&$form, &$form_state, $form_id) {
       module_load_include('inc', 'certificate', 'certificate.admin');
       certificate_alter_node_form($form, $form_state);
     }
+  }
+
+  if ($form_id == 'node_type_form') {
+    $form['certificate'] = array(
+      '#type' => 'fieldset',
+      '#title' => 'Certificate',
+      '#collapsed' => TRUE,
+      '#collapsible' => TRUE,
+    );
+
+    $form['certificate']['certificate_certifiable'] = array(
+      '#type' => 'checkbox',
+      '#title' => 'Award certificate',
+      '#description' => t('Make this content type certificate-enabled. Certificate mapping selection will show on the node form.'),
+      '#default_value' => variable_get("certificate_certifiable_{$form['#node_type']->type}", 0),
+    );
   }
 }
 
