@@ -365,7 +365,7 @@ function certificate_form_alter(&$form, &$form_state, $form_id) {
   if ($form_id == 'node_type_form') {
     $form['certificate'] = array(
       '#type' => 'fieldset',
-      '#title' => 'Certificate',
+      '#title' => 'Certificate settings',
       '#collapsed' => TRUE,
       '#collapsible' => TRUE,
     );
@@ -373,7 +373,7 @@ function certificate_form_alter(&$form, &$form_state, $form_id) {
     $form['certificate']['certificate_certifiable'] = array(
       '#type' => 'checkbox',
       '#title' => 'Award certificate',
-      '#description' => t('Make this content type certificate-enabled. Certificate mapping selection will show on the node form.'),
+      '#description' => t('Make this content type certificate-enabled. Certificate mapping selections will show on the node form.'),
       '#default_value' => variable_get("certificate_certifiable_{$form['#node_type']->type}", 0),
     );
   }
