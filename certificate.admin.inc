@@ -476,6 +476,7 @@ function certificate_admin_clear_form() {
   $sql .= tablesort_sql($header);
 
   $result = db_query($sql);
+  $nids = array();
   while ($row = db_fetch_object($result)) {
     $nids[$row->nid] = '';
     $form['cs']['title'][$row->nid]['#value'] = $row->title;
@@ -505,7 +506,7 @@ function theme_certificate_admin_clear_form($form) {
     array('data' => 'Count', 'field' => 'cs_count')
   );
 
-  if (count($form['cs']['title'])) {
+  if (!empty($form['cs']['title'])) {
     foreach (element_children($form['cs']['title']) as $key) {
       $rows[] = array(
         drupal_render($form['cs']['nids'][$key]),

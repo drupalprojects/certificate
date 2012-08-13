@@ -60,9 +60,11 @@ function certificate_single($account, $node) {
     }
 
     foreach (array_keys($hooks) as $map_type) {
-      $matches = module_invoke_all('certificate_map', $node, $user, $map_type, array_keys(array_filter((array) $mapping[$map_type])), array());
-      if (count($matches)) {
-        $template_id = $mapping[$map_type][$matches[0]]; // First one for now.
+      if (!empty($mapping[$map_type])) {
+        $matches = module_invoke_all('certificate_map', $node, $user, $map_type, array_keys(array_filter((array) $mapping[$map_type])), array());
+        if (count($matches)) {
+          $template_id = $mapping[$map_type][$matches[0]]; // First one for now.
+        }
       }
     }
 
@@ -89,7 +91,7 @@ function certificate_single($account, $node) {
       }
     }
     else {
-      $no_match_string = t('Sorry, there is no certificate available based on your profile data.');
+      $no_match_string = t('Sorry, there is no certificate available.');
       // Don't show Drupal frame if no certificate matches.
       global $baseurl;
       $ref = parse_url($_SERVER['HTTP_REFERER']);

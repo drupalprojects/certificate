@@ -562,7 +562,7 @@ function certificate_reset_certificates_action($object, $context) {
  *    show but be denied with a message.
  *  @return FALSE if certificate tab should be hidden.
  */
-function certificate_can_access_certificate($node, &$account = NULL) {
+function certificate_can_access_certificate($node, $account = NULL, $flush = FALSE) {
   static $cert_access = array();
   $found_true = NULL;
   $found_false = NULL;
@@ -580,7 +580,7 @@ function certificate_can_access_certificate($node, &$account = NULL) {
     return FALSE;
   }
 
-  if (!isset($cert_access[$node->nid])) {
+  if ($flush || !isset($cert_access[$node->nid])) {
     $access = module_invoke_all('access_certificate', $node, $account);
     $cert_access[$node->nid] = $access;
   }
@@ -710,10 +710,12 @@ function certificate_certificate_map($node, $user, $map_type, $options) {
     $content_profile = content_profile_load('profile', $user->uid);
     $groupings = variable_get('certificate_field_grouping', array());
     foreach ($options as $key) {
-      foreach ($groupings[$key] as $field_name => $accepted_values) {
-        foreach ($content_profile->$field_name as $item) {
-          if (in_array($item['value'], $accepted_values)) {
-            return $key;
+      if (!empty($groupings[$key])) {
+        foreach ($groupings[$key] as $field_name => $accepted_values) {
+          foreach ($content_profile->$field_name as $item) {
+            if (in_array($item['value'], $accepted_values)) {
+              return $key;
+            }
           }
         }
       }
@@ -721,7 +723,7 @@ function certificate_certificate_map($node, $user, $map_type, $options) {
   }
 
   if ($map_type == 'manual') {
-    if ($options[0] == 'manual') {
+    if (isset($options[0]) &&  $options[0] == 'manual') {
       return 'manual';
     }
   }
