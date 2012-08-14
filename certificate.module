@@ -351,9 +351,11 @@ function certificate_nodeapi(&$node, $op, $teaser = NULL, $page = NULL) {
     switch ($op) {
       case 'insert':
       case 'update':
-        if (certificate_node_is_certifiable($node)) {
-          // Update node mappings from a certifiable activity.
-          certificate_update_node_mappings($node->nid, $node->certificate['map']);
+        if (isset($node->certificate)) {
+          if (certificate_node_is_certifiable($node)) {
+            // Update node mappings from a certifiable activity.
+            certificate_update_node_mappings($node->nid, $node->certificate['map']);
+          }
         }
         break;
 
@@ -380,12 +382,14 @@ function certificate_nodeapi(&$node, $op, $teaser = NULL, $page = NULL) {
       case 'insert':
       case 'update':
         // Save the certificate settings.
-        $record = $node->certificate;
-        $record['nid'] = $node->nid;
-        if (db_result(db_query("select 1 from {certificate_node_settings} where nid = %d", $node->nid))) {
-          $keys = array('nid');
+        if (isset($node->certificate)) {
+          $record = $node->certificate;
+          $record['nid'] = $node->nid;
+          if (db_result(db_query("select 1 from {certificate_node_settings} where nid = %d", $node->nid))) {
+            $keys = array('nid');
+          }
+          drupal_write_record('certificate_node_settings', $record, $keys);
         }
-        drupal_write_record('certificate_node_settings', $record, $keys);
         break;
       case 'load':
         return array(
@@ -397,7 +401,7 @@ function certificate_nodeapi(&$node, $op, $teaser = NULL, $page = NULL) {
 
 /**
  * Implementation of hook_content_extra_fields().
- * 
+ *
  * Allow the certificate download link to be sorted in the node edit forms.
  */
 function certificate_content_extra_fields($type_name) {
@@ -723,7 +727,7 @@ function certificate_certificate_map($node, $user, $map_type, $options) {
   }
 
   if ($map_type == 'manual') {
-    if (isset($options[0]) &&  $options[0] == 'manual') {
+    if (isset($options[0]) && $options[0] == 'manual') {
       return 'manual';
     }
   }
