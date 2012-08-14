@@ -47,7 +47,7 @@ function certificate_type_mapping_form($form_state, $node = NULL) {
 
         $form[$key] = array(
           '#type' => 'select',
-          '#title' => $key,
+          '#title' => check_plain($key),
           '#options' => $template_options,
           '#default_value' => $template,
         );
@@ -83,7 +83,7 @@ function certificate_type_mapping_form($form_state, $node = NULL) {
 
         $form[$key] = array(
           '#type' => 'select',
-          '#title' => $option_name,
+          '#title' => check_plain($option_name),
           '#options' => $template_options,
           '#default_value' => $template,
         );
@@ -143,10 +143,10 @@ function certificate_mapping_form(&$form, &$form_state) {
 
   foreach ($mappings as $map_type => $map) {
     $form['certificate']['map'][$map_type] = array(
-      '#title' => $map['title'],
+      '#title' => check_plain($map['title']),
       '#type' => 'fieldset',
       '#group' => TRUE,
-      '#description' => $map['description'],
+      '#description' => check_plain($map['description']),
       '#collapsed' => TRUE,
       '#collapsible' => TRUE,
     );
@@ -155,7 +155,7 @@ function certificate_mapping_form(&$form, &$form_state) {
       foreach ($map['options'] as $key => $title) {
         $form['certificate']['map'][$map_type][$key] = array(
           '#type' => 'select',
-          '#title' => $title,
+          '#title' => check_plain($title),
           '#options' => $options,
           '#default_value' => isset($stored[$map_type][$key]) ? $stored[$map_type][$key] : NULL,
         );
@@ -163,7 +163,7 @@ function certificate_mapping_form(&$form, &$form_state) {
     }
     else {
       $form['certificate']['map'][$map_type]['empty'] = array(
-        '#value' => 'There are no mappings available for ' . $map['title'],
+        '#value' => t('There are no mappings available for %title', array('%title' => $map['title'])),
       );
     }
   }
@@ -293,7 +293,7 @@ function certificate_field_grouping_form() {
     foreach ($groupsinfo as $key => $title) {
       $form['map'][$key] = array(
         '#type' => 'fieldset',
-        '#title' => $title,
+        '#title' => check_plain($title),
         '#tree' => TRUE,
         '#collapsible' => TRUE,
         '#collapsed' => TRUE,

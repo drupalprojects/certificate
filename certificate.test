@@ -1,7 +1,11 @@
 <?php
 
 /**
- * Tests for course object access.
+ * @file certificate.test
+ */
+
+/**
+ * Tests for Certificate.
  */
 class CertificateTestCase extends DrupalWebTestCase {
 

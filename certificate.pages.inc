@@ -91,12 +91,7 @@ function certificate_single($account, $node) {
       }
     }
     else {
-      $no_match_string = t('Sorry, there is no certificate available.');
-      // Don't show Drupal frame if no certificate matches.
-      global $baseurl;
-      $ref = parse_url($_SERVER['HTTP_REFERER']);
-      $ref['path'] = str_replace($baseurl, '', $ref['path']);
-      return $no_match_string;
+      return t('Sorry, there is no certificate available.');
     }
   }
 
@@ -195,7 +190,7 @@ function certificate_preview($template_id) {
  */
 function theme_certificate_certificate($node, $account, $template) {
   $types = array(
-    'global' => null,
+    'global' => NULL,
     'node' => $node,
     'user' => $account,
     'certificate' => array(

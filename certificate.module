@@ -250,7 +250,7 @@ function certificate_theme() {
  *   An array of all certificates, keyed by node (certificate) ID.
  */
 function certificate_certificate_load_all() {
-  $sql = "SELECT *,nid as cid FROM {node} node where type='certificate'";
+  $sql = "SELECT *, nid AS cid FROM {node} n WHERE type = 'certificate'";
   $result = db_query($sql);
 
   $certificates = array();
@@ -538,8 +538,8 @@ function certificate_rules_action_info() {
  * have return values.
  */
 function certificate_rules_award_certificate($node, $user) {
-  global $certificate_award;
-  $certificate_award = TRUE;
+  global $_certificate_award;
+  $_certificate_award = TRUE;
 }
 
 /**
@@ -701,10 +701,10 @@ function certificate_certificate_map_options() {
 function certificate_certificate_map($node, $user, $map_type, $options) {
   if ($map_type == 'rules') {
     foreach ($options as $key) {
-      global $certificate_award;
-      $certificate_award = FALSE;
+      global $_certificate_award;
+      $_certificate_award = FALSE;
       rules_invoke_rule_set($key, array('node' => $node, 'user' => $user));
-      if ($certificate_award) {
+      if ($_certificate_award) {
         return $key;
       }
     }
@@ -731,4 +731,14 @@ function certificate_certificate_map($node, $user, $map_type, $options) {
       return 'manual';
     }
   }
+}
+
+/**
+ * Implements hook_coder_ignore().
+ */
+function certificate_coder_ignore() {
+  return array(
+    'path' => drupal_get_path('module', 'certificate'),
+    'line prefix' => drupal_get_path('module', 'certificate'),
+  );
 }
