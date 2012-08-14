@@ -49,11 +49,10 @@ class CertificateTestCase extends DrupalWebTestCase {
     $this->drupalLogin($u1);
     $GLOBALS['certificate_ok'] = TRUE;
 
-    $this->drupalGet("node/{$activity_node->nid}/certificate?certificate_ok");
+    $this->drupalGet("node/{$activity_node->nid}/certificate", array('query' => 'certificate_ok'));
     $this->assertNoResponse(403, 'Did not get access denied.');
     $this->assertNoText('Custom access denied message.', 'Did not find moduled provided access denied message on certificate page.');
     $this->assertText('Sorry, there is no certificate available.', 'Found no certificate available text.');
-    $this->fail($this->drupalGetContent());
 
     // Map the first letter of the user's name to the certificate.
     certificate_update_node_mappings($activity_node->nid, array(
@@ -64,7 +63,7 @@ class CertificateTestCase extends DrupalWebTestCase {
 
     certificate_course_node_template_settings($activity_node->nid);
 
-    $this->drupalGet("node/{$activity_node->nid}/certificate?certificate_ok");
+    $this->drupalGet("node/{$activity_node->nid}/certificate", array('query' => 'certificate_ok'));
     $this->assertNoResponse(403, 'Did not get access denied.');
     $this->assertNoText('Custom access denied message.', 'Did not find module provided access denied message on certificate page.');
     $this->assertNoText('Sorry, there is no certificate available.', 'User received certificate.');
