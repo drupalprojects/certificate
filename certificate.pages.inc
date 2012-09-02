@@ -78,7 +78,7 @@ function certificate_single($account, $node) {
       // Print module gets around this because the meta tag in Drupal is already
       // set - but here, we have to add it since we are only delivering the node
       // body.
-      $output = '<meta charset="utf-8">' . theme('certificate_certificate', $node, $account, $template);
+      $output = '<html><head><meta charset="utf-8"/></head><body>' . theme('certificate_certificate', $node, $account, $template) . '</body></html>';
 
       // Now save this generated certificate as a 'snapshot' in the database.
       $snapshot['uid'] = $account->uid;
@@ -98,12 +98,12 @@ function certificate_single($account, $node) {
   $print_pdf_pdf_tool = variable_get('print_pdf_pdf_tool', '');
   if ($print_pdf_pdf_tool == '') {
     if ($user->uid == 1) {
-      drupal_set_message('Certificate cannot be displayed because you have not selected a PDF generation tool in ' . l('Printer, e-mail and PDF versions', 'admin/settings/print/pdf') . '.', 'error');
+      drupal_set_message('Certificate cannot be displayed because you have not selected a PDF generation tool in !link.', array('!link' => l('Printer, e-mail and PDF versions', 'admin/settings/print/pdf') . '.', 'error'));
     }
     else {
       drupal_set_message('PDF generation tool is not configured.');
     }
-    return '';
+    return ' ';
   }
 
   module_load_include('pages.inc', 'print_pdf', 'print_pdf');
@@ -117,41 +117,22 @@ function certificate_single($account, $node) {
     $output = preg_replace_callback($pattern, '_print_rewrite_urls', $output);
     global $conf;
     $conf['print_pdf_page_orientation'] = $template->certificate['orientation'];
-
-    if (basename($print_pdf_pdf_tool) == 'dompdf_config.inc.php') {
-      $print_func = '_print_pdf_dompdf';
-    }
-    elseif (basename($print_pdf_pdf_tool) == 'tcpdf.php') {
-      $print_func = '_print_pdf_tcpdf';
-    }
-    elseif (substr(basename($print_pdf_pdf_tool, '.exe'), 0, 11) == 'wkhtmltopdf') {
-      $print_func = '_print_pdf_wkhtmltopdf';
-    }
-
-    $print_func(array('node' => $node), $output, $node->title . '.pdf');
+    print_pdf_generate_html(array('node' => $node), $output, $node->title . '.pdf');
   }
 }
 
 /**
- * Preview certificate.
- *
- * @todo This code is copied from above, needs to be refactored to avoid
- * copypasta.
+ * Preview certificate template as PDF.
  */
 function certificate_preview($template_id) {
   $template = node_load($template_id);
   if ($template) {
-    $output = theme('certificate_certificate', $account, $profile, $node, $group, $template);
+    $output = '<html><head><meta charset="utf-8"/></head><body>' . theme('certificate_certificate', $node, $account, $template) . '</body></html>';
   }
 
   $print_pdf_pdf_tool = variable_get('print_pdf_pdf_tool', '');
   if ($print_pdf_pdf_tool == '') {
-    if ($user->uid == 1) {
-      drupal_set_message('Certificate cannot be displayed because you have not selected a PDF generation tool in ' . l('Printer, e-mail and PDF versions', 'admin/settings/print/pdf') . '.', 'error');
-    }
-    else {
-      drupal_set_message('PDF generation tool is not configured.');
-    }
+    drupal_set_message('Certificate cannot be displayed because you have not selected a PDF generation tool in !link.', array('!link' => l('Printer, e-mail and PDF versions', 'admin/settings/print/pdf') . '.', 'error'));
     return '';
   }
 
@@ -162,18 +143,7 @@ function certificate_preview($template_id) {
   $output = preg_replace_callback($pattern, '_print_rewrite_urls', $output);
   global $conf;
   $conf['print_pdf_page_orientation'] = $template->certificate['orientation'];
-
-  if (basename($print_pdf_pdf_tool) == 'dompdf_config.inc.php') {
-    $print_func = '_print_pdf_dompdf';
-  }
-  elseif (basename($print_pdf_pdf_tool) == 'tcpdf.php') {
-    $print_func = '_print_pdf_tcpdf';
-  }
-  elseif (substr(basename($print_pdf_pdf_tool, '.exe'), 0, 11) == 'wkhtmltopdf') {
-    $print_func = '_print_pdf_wkhtmltopdf';
-  }
-
-  $print_func(array('node' => $template), $output, $template->title . '.pdf');
+  print_pdf_generate_html(array('node' => $node), $output, $node->title . '.pdf');
 }
 
 /**
