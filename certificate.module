@@ -344,8 +344,6 @@ function certificate_form_certificate_node_form_alter(&$form, &$form_state) {
  */
 function certificate_update_node_mappings($nid, array $node_settings = NULL) {
   if (is_array($node_settings)) {
-    // TODO Please review the conversion of this statement to the D7 database API syntax.
-    /* db_query("DELETE FROM {certificate_node} WHERE nid = %d", $nid) */
     db_delete('certificate_node')
       ->condition('nid', $nid)
       ->execute();
@@ -364,66 +362,67 @@ function certificate_update_node_mappings($nid, array $node_settings = NULL) {
 }
 
 /**
- * Implements hook_nodeapi().
+ * Implementation of hook_node_insert().
  */
-function certificate_nodeapi_OLD(&$node, $op, $teaser = NULL, $page = NULL) {
-  // TODO Remaining code in this function needs to be moved to the appropriate new hook function.
+function certificate_node_insert($node) {
+  certificate_node_update($node);
+}
+
+/**
+ * Implementation of hook_node_update().
+ */
+function certificate_node_update($node) {
   if (certificate_node_is_certifiable($node)) {
-    switch ($op) {
-      case 'insert':
-      case 'update':
-        if (isset($node->certificate)) {
-          if (certificate_node_is_certifiable($node)) {
-            // Update node mappings from a certifiable activity.
-            certificate_update_node_mappings($node->nid, $node->certificate['map']);
-          }
-        }
-        break;
+    // Update node mappings from a certifiable activity.
+    certificate_update_node_mappings($node->nid, $node->certificate['map']);
+  }
 
-      case 'delete':
-        // Clean up the certificate template tables for the deleted node.
-        // TODO Please review the conversion of this statement to the D7 database API syntax.
-        /* db_query("DELETE FROM {certificate_node} WHERE nid = %d", $node->nid) */
-        db_delete('certificate_node')
-          ->condition('nid', $node->nid)
-          ->execute();
-        // TODO Please review the conversion of this statement to the D7 database API syntax.
-        /* db_query("DELETE FROM {certificate_snapshots} WHERE nid = %d", $node->nid) */
-        db_delete('certificate_snapshots')
-          ->condition('nid', $node->nid)
-          ->execute();
-        break;
-
-      case 'load':
-        return array('certificate' => array('node_settings' => certificate_course_node_template_settings($node->nid)));
-
-      case 'view':
-        if (certificate_can_access_certificate($node)) {
-          // Add a download certificate link to the node content.
-          $node->content['certificate']['#value'] = '<span class="certificate-link">' . l(t('Download certificate'), "node/{$node->nid}/certificate") . '</span>';
-        }
-        break;
+  if ($node->type == 'certificate') {
+    // Save the certificate settings.
+    if (isset($node->certificate)) {
+      $record = $node->certificate;
+      $record['nid'] = $node->nid;
+      if (db_query("select 1 from {certificate_node_settings} where nid = :nid", array(':nid' => $node->nid))->fetchField()) {
+        $keys = array('nid');
+      }
+      drupal_write_record('certificate_node_settings', $record, $keys);
     }
   }
-  if ($node->type == 'certificate') {
-    switch ($op) {
-      case 'insert':
-      case 'update':
-        // Save the certificate settings.
-        if (isset($node->certificate)) {
-          $record = $node->certificate;
-          $record['nid'] = $node->nid;
-          if (db_query("select 1 from {certificate_node_settings} where nid = :nid", array(':nid' => $node->nid))->fetchField()) {
-            $keys = array('nid');
-          }
-          drupal_write_record('certificate_node_settings', $record, $keys);
-        }
-        break;
-      case 'load':
-        return array(
-          'certificate' => db_query("select * from {certificate_node_settings} where nid = :nid", array(':nid' => $node->nid))->fetch(PDO::FETCH_ASSOC),
-        );
+}
+
+/**
+ * Implements hook_nodeapi().
+ */
+function certificate_node_delete($node) {
+  db_delete('certificate_node')
+    ->condition('nid', $node->nid)
+    ->execute();
+  db_delete('certificate_snapshots')
+    ->condition('nid', $node->nid)
+    ->execute();
+}
+
+/**
+ * Implements hook_node_load().
+ */
+function certificate_node_load($nodes, $types) {
+  foreach ($nodes as $nid => $node) {
+    if (certificate_node_is_certifiable($node)) {
+      $nodes[$nid]->certificate = array('node_settings' => certificate_course_node_template_settings($node->nid));
     }
+    if ($node->type == 'certificate') {
+      $nodes[$nid]->certificate = db_query("select * from {certificate_node_settings} where nid = :nid", array(':nid' => $node->nid))->fetch(PDO::FETCH_ASSOC);
+    }
+  }
+}
+
+/**
+ * Implements hook_node_view().
+ */
+function certificate_node_view($node, $view_mode, $langcode) {
+  if (certificate_can_access_certificate($node)) {
+    // Add a download certificate link to the node content.
+    $node->content['certificate']['#value'] = '<span class="certificate-link">' . l(t('Download certificate'), "node/{$node->nid}/certificate") . '</span>';
   }
 }
 
@@ -661,19 +660,8 @@ function certificate_can_access_certificate($node, $account = NULL, $flush = FAL
  * Implements hook_user_cancel().
  */
 function certificate_user_cancel($edit, $account, $method) {
-  if (TRUE) {
-    $sql = "delete from {certificate_snapshots} where uid = %d";
-    db_query($sql, $account->uid);
-  }
-}
-
-/**
- * Implements hook_user().
- *
- * Clean up after user deletion.
- */
-function certificate_user_OLD($op, &$edit, &$account, $category = NULL) {
-
+  $sql = "DELETE FROM {certificate_snapshots} WHERE uid = :uid";
+  db_query($sql, array(':uid' => $account->uid));
 }
 
 /**
