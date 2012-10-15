@@ -121,6 +121,10 @@ function certificate_install() {
   // Set certificate variables.
   variable_set('node_options_certificate', array(0 => 'revision'));
   variable_set('comment_certificate', 0);
+
+  node_types_rebuild();
+  $types = node_type_get_types();
+  node_add_body_field($types['certificate'], 'Body');
 }
 
 /**
@@ -131,12 +135,10 @@ function certificate_uninstall() {
   // drupal_uninstall_schema('certificate')
   cache_clear_all('certificate:*', 'cache', TRUE);
 
-  // Remove variables.
-  // TODO Please convert this statement to the D7 database API syntax.
-  $variables = db_query("SELECT name FROM {variable} WHERE name LIKE '%s_%%'", 'certificate');
-  while ($variable = db_fetch_object($variables)) {
-    variable_del($variable->name);
-  }
+  db_delete('variable')
+    ->condition('name', "certificate_%", "LIKE")
+    ->execute();
+  
   variable_del('node_options_certificate');
   variable_del('comment_certificate');
 }

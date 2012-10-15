@@ -48,34 +48,11 @@ function certificate_node_access($node, $op, $account) {
 }
 
 /**
- * @todo Please document this function.
- * @see http://drupal.org/node/1354
+ * Certificate node form.
  */
 function certificate_form(&$node, $form_state) {
-  // The site admin can decide if this node type has a title and body, and how
-  // the fields should be labeled. We need to load these settings so we can
-  // build the node form correctly.
-  $type = node_type_get_type($node);
+  $form = node_content_form($node, $form_state);
 
-  if ($type->has_title) {
-    $form['title'] = array(
-      '#type' => 'textfield',
-      '#title' => check_plain($type->title_label),
-      '#required' => TRUE,
-      '#default_value' => $node->title,
-      '#weight' => -5,
-    );
-  }
-
-  if ($type->has_body) {
-    // In Drupal 6, we use node_body_field() to get the body and filter
-    // elements. This replaces the old textarea + filter_form() method of
-    // setting this up. It will also ensure the teaser splitter gets set up
-    // properly.
-    $form['body_field'] = node_body_field($node, $type->body_label, $type->min_word_count);
-  }
-
-  // Now we define the form elements specific to our node type.
   $form['certificate']['#tree'] = TRUE;
   $form['certificate']['orientation'] = array(
     '#type' => 'radios',
@@ -103,6 +80,7 @@ function certificate_menu() {
 
   $items['admin/structure/certificates'] = array(
     'title' => 'Certificates',
+    'description' => 'Manage certificates and mappings.',
     'access arguments' => array('administer certificates'),
     'file' => 'certificate.admin.inc',
     'page callback' => 'certificate_templates_list',
@@ -154,16 +132,16 @@ function certificate_menu() {
   );
 
   /*
-   $items['admin/structure/certificates/mapping/groups/delete/%'] = array(
-   'title' => 'Delete field group',
-   'description' => 'Delete a field group',
-   'page callback' => 'drupal_get_form',
-   'page arguments' => array('certificate_field_grouping_delete_form'),
-   'page arguments' => array(6),
-   'access arguments' => array('administer certificates'),
-   'file' => 'certificate.admin.inc',
-   'type' => MENU_LOCAL_TASK,
-   );
+    $items['admin/structure/certificates/mapping/groups/delete/%'] = array(
+    'title' => 'Delete field group',
+    'description' => 'Delete a field group',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('certificate_field_grouping_delete_form'),
+    'page arguments' => array(6),
+    'access arguments' => array('administer certificates'),
+    'file' => 'certificate.admin.inc',
+    'type' => MENU_LOCAL_TASK,
+    );
    */
 
   $items['admin/structure/certificates/settings'] = array(
@@ -285,11 +263,10 @@ function certificate_theme() {
  *   An array of all certificates, keyed by node (certificate) ID.
  */
 function certificate_certificate_load_all() {
-  $sql = "SELECT *, nid AS cid FROM {node} n WHERE type = 'certificate'";
   $result = db_query("SELECT *, nid AS cid FROM {node} n WHERE type = :type", array(':type' => 'certificate'));
 
   $certificates = array();
-  while ($certificate = db_fetch_array($result)) {
+  while ($certificate = $result->fetch(PDO::FETCH_ASSOC)) {
     $certificates[$certificate['cid']] = $certificate;
   }
 
@@ -302,11 +279,10 @@ function certificate_certificate_load_all() {
  * Quick get per-node template settings.
  */
 function certificate_course_node_template_settings($nid) {
-  $sql = "SELECT * FROM {certificate_node} WHERE nid = %d";
   $result = db_query("SELECT * FROM {certificate_node} WHERE nid = :nid", array(':nid' => $nid));
 
   $node_template_settings = array();
-  while ($node_template_setting = db_fetch_array($result)) {
+  while ($node_template_setting = $result->fetch(PDO::FETCH_ASSOC)) {
     $node_template_settings[$node_template_setting['mapper']][$node_template_setting['type']] = $node_template_setting['template'];
   }
 
@@ -371,8 +347,8 @@ function certificate_update_node_mappings($nid, array $node_settings = NULL) {
     // TODO Please review the conversion of this statement to the D7 database API syntax.
     /* db_query("DELETE FROM {certificate_node} WHERE nid = %d", $nid) */
     db_delete('certificate_node')
-  ->condition('nid', $nid)
-  ->execute();
+      ->condition('nid', $nid)
+      ->execute();
     foreach ($node_settings as $mapper => $values) {
       foreach (array_filter($values) as $match => $cert_nid) {
         $record = array(
@@ -409,13 +385,13 @@ function certificate_nodeapi_OLD(&$node, $op, $teaser = NULL, $page = NULL) {
         // TODO Please review the conversion of this statement to the D7 database API syntax.
         /* db_query("DELETE FROM {certificate_node} WHERE nid = %d", $node->nid) */
         db_delete('certificate_node')
-  ->condition('nid', $node->nid)
-  ->execute();
+          ->condition('nid', $node->nid)
+          ->execute();
         // TODO Please review the conversion of this statement to the D7 database API syntax.
         /* db_query("DELETE FROM {certificate_snapshots} WHERE nid = %d", $node->nid) */
         db_delete('certificate_snapshots')
-  ->condition('nid', $node->nid)
-  ->execute();
+          ->condition('nid', $node->nid)
+          ->execute();
         break;
 
       case 'load':
@@ -437,7 +413,7 @@ function certificate_nodeapi_OLD(&$node, $op, $teaser = NULL, $page = NULL) {
         if (isset($node->certificate)) {
           $record = $node->certificate;
           $record['nid'] = $node->nid;
-          if (db_query("select 1 from {certificate_node_settings} where nid = %d", $node->nid)->fetchField()) {
+          if (db_query("select 1 from {certificate_node_settings} where nid = :nid", array(':nid' => $node->nid))->fetchField()) {
             $keys = array('nid');
           }
           drupal_write_record('certificate_node_settings', $record, $keys);
@@ -445,7 +421,7 @@ function certificate_nodeapi_OLD(&$node, $op, $teaser = NULL, $page = NULL) {
         break;
       case 'load':
         return array(
-          'certificate' => db_fetch_array(db_query("select * from {certificate_node_settings} where nid = %d", $node->nid)),
+          'certificate' => db_query("select * from {certificate_node_settings} where nid = :nid", array(':nid' => $node->nid))->fetch(PDO::FETCH_ASSOC),
         );
     }
   }
@@ -536,9 +512,9 @@ function certificate_snapshot_delete($account, $node) {
   // TODO Please review the conversion of this statement to the D7 database API syntax.
   /* db_query($sql, $account->uid, $node->nid) */
   db_delete('certificate_snapshots')
-  ->condition('uid', $account->uid)
-  ->condition('nid', $node->nid)
-  ->execute();
+    ->condition('uid', $account->uid)
+    ->condition('nid', $node->nid)
+    ->execute();
   return TRUE;
 }
 
@@ -554,8 +530,8 @@ function certificate_snapshot_delete_by_node($node) {
   // TODO Please review the conversion of this statement to the D7 database API syntax.
   /* db_query($sql, $node->nid) */
   db_delete('certificate_snapshots')
-  ->condition('nid', $node->nid)
-  ->execute();
+    ->condition('nid', $node->nid)
+    ->execute();
   return TRUE;
 }
 
@@ -696,7 +672,9 @@ function certificate_user_cancel($edit, $account, $method) {
  *
  * Clean up after user deletion.
  */
-function certificate_user_OLD($op, &$edit, &$account, $category = NULL) { }
+function certificate_user_OLD($op, &$edit, &$account, $category = NULL) {
+
+}
 
 /**
  * Return an array of certificate templates suitable for use in an options

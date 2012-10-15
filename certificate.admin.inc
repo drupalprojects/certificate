@@ -127,9 +127,9 @@ function certificate_mapping_form(&$form, &$form_state) {
   }
 
   $stored = array();
-  $sql = "select * from {certificate_node} cn where nid = %d";
-  $result = db_query($sql, $nid);
-  while ($row = db_fetch_object($result)) {
+  $sql = "SELECT * FROM {certificate_node} cn WHERE nid = :nid";
+  $result = db_query($sql, array(':nid' => $nid));
+  while ($row = $result->fetch()) {
     $stored[$row->mapper][$row->type] = $row->template;
   }
 
@@ -435,7 +435,7 @@ function certificate_templates_list() {
   $l = l('Create new certificate', 'node/add/certificate', array('query' => drupal_get_destination()));
   $sql = "select * from {node} where type='certificate'";
   $result = db_query($sql);
-  while ($row = db_fetch_array($result)) {
+  while ($row = $result->fetch(PDO::FETCH_ASSOC)) {
     $destination = drupal_get_destination();
     $certificates[] = array(
       'title' => $row['title'],
@@ -445,7 +445,7 @@ function certificate_templates_list() {
     );
   }
 
-  return $l . theme_table(array(t('Title'), t('Edit'), t('Delete'), t('Preview')), $certificates);
+  return $l . theme_table(array('header' => array(t('Title'), t('Edit'), t('Delete'), t('Preview')), 'rows' => $certificates, 'attributes' => array(), 'caption' => '', 'colgroups' => array(), 'sticky' => FALSE, 'empty' => ''));
 }
 
 /**
@@ -488,12 +488,9 @@ function certificate_admin_clear_form($form, &$form_state) {
   left join {node} n on (cs.nid = n.nid)
   group by cs.nid";
 
-  $sql .= tablesort_sql($header);
-
-  // TODO Please convert this statement to the D7 database API syntax.
   $result = db_query($sql);
   $nids = array();
-  while ($row = db_fetch_object($result)) {
+  while ($row = $result->fetch()) {
     $nids[$row->nid] = '';
     $form['cs']['title'][$row->nid]['#value'] = $row->title;
     $form['cs']['count'][$row->nid]['#value'] = $row->count;

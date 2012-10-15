@@ -55,7 +55,7 @@ function certificate_single($account, $node) {
     $sql = "select * from {certificate_node} where nid = %d or nid = %d order by nid asc";
     $result = db_query($sql, 0, $node->nid);
     $mapping = array();
-    while ($row = db_fetch_object($result)) {
+    while ($row = $result->fetch()) {
       $mapping[$row->mapper][$row->type] = $row->template;
     }
 
@@ -182,7 +182,7 @@ function theme_certificate_certificate($variables) {
     $template->body = token_replace_multiple($template->body, $types);
   }
 
-  $template->body = check_markup($template->body, $template->format, $langcode = '' /* TODO Set this variable. */, FALSE);
+  $template->body = check_markup($template->body, $template->format, LANGUAGE_NONE, FALSE);
 
   return $template->body;
 }
