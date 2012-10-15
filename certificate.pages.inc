@@ -143,7 +143,7 @@ function certificate_preview($template_id) {
   $output = preg_replace_callback($pattern, '_print_rewrite_urls', $output);
   global $conf;
   $conf['print_pdf_page_orientation'] = $template->certificate['orientation'];
-  print_pdf_generate_html(array('node' => $node), $output, $node->title . '.pdf');
+  print_pdf_generate_html(array('node' => $node), $output, $template->title . '.pdf');
 }
 
 /**

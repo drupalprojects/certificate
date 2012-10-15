@@ -163,7 +163,7 @@ function certificate_mapping_form(&$form, &$form_state) {
     }
     else {
       $form['certificate']['map'][$map_type]['empty'] = array(
-        '#value' => t('There are no mappings available for %title', array('%title' => $map['title'])),
+        '#value' => '<p>' . t('There are no mappings available for %title.', array('%title' => $map['title'])) . '</p>',
       );
     }
   }
