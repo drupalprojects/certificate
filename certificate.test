@@ -29,7 +29,7 @@ class CertificateTestCase extends DrupalWebTestCase {
   public function testCertificateAccess() {
     $u1 = $this->drupalCreateUser();
 
-    // Create an activity. 
+    // Create an activity.
     $activity_node = $this->drupalCreateNode(array('type' => $this->contentType->type));
 
     // Check for forbidden certificate.

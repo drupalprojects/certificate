@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Implementation of hook_access_certificate().
+ * Implements hook_access_certificate().
  */
 function quiz_certificate_access_certificate($node, $user) {
   if ($node->type == 'quiz') {

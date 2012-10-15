@@ -57,7 +57,7 @@ function certificate_type_mapping_form($form_state, $node = NULL) {
       $form['nogroups'] = array(
         '#prefix' => '<p>',
         '#suffix' => '</p>',
-        '#value' => t("Please go to !groups to configure certificate field mapping groups.", array('!groups' => l('groups', 'admin/build/certificates/mapping/groups'))),
+        '#value' => t("Please go to !groups to configure certificate field mapping groups.", array('!groups' => l('groups', 'admin/structure/certificates/mapping/groups'))),
       );
     }
   }
@@ -66,7 +66,7 @@ function certificate_type_mapping_form($form_state, $node = NULL) {
     $field_options_array = certificate_get_selected_type_options();
     if (arg(0) == 'node' && !count($field_options_array)) {
       $form['#type'] = 'markup';
-      $form['#value'] = "<div>" . t("Please !link before using certificates.", array('!link' => l('set up field mappings', 'admin/build/certificates/mapping'))) . "</div>";
+      $form['#value'] = "<div>" . t("Please !link before using certificates.", array('!link' => l('set up field mappings', 'admin/structure/certificates/mapping'))) . "</div>";
     }
 
     // Generate form elements based on selected field's allowed values.
@@ -172,7 +172,7 @@ function certificate_mapping_form(&$form, &$form_state) {
 /**
  * Form for global mappings.
  */
-function certificate_settings_form(&$form_state) {
+function certificate_settings_form($form, &$form_state) {
   $form['certificate']['#tree'] = TRUE;
 
   module_load_include('inc', 'certificate', 'certificate.admin');
@@ -206,6 +206,7 @@ function certificate_settings_form_submit($form, &$form_state) {
  * @see certificate_overview_form()
  */
 function theme_certificate_overview_form($form) {
+  // TODO: Should this theme certificate_overview_form be declared in hook_theme()?
   $rows = array();
   foreach (element_children($form['certificates']) as $key) {
     $row = array();
@@ -225,7 +226,10 @@ function theme_certificate_overview_form($form) {
 
   // If there were no certificates found, let users know.
   if (count($rows) == 0) {
-    $rows[] = array(array('data' => t('No certificate templates have been added.'), 'colspan' => 3));
+    $rows[] = array(array(
+        'data' => t('No certificate templates have been added.'),
+        'colspan' => 3,
+      ));
   }
 
   // Render a list of header titles, and our array of rows, into a table. Even
@@ -235,7 +239,7 @@ function theme_certificate_overview_form($form) {
   $header = array(t('Title'), t('Operations'));
   // Add an optional caption that appears above the table.
   $caption = t('');
-  $output = theme('table', $header, $rows, array('id' => 'certificates-overview'), $caption);
+  $output = theme('table', array('header' => $header, 'rows' => $rows, 'attributes' => array('id' => 'certificates-overview'), 'caption' => $caption));
   $output .= drupal_render($form);
 
   return $output;
@@ -245,6 +249,7 @@ function theme_certificate_overview_form($form) {
  * Theme the form as a table.
  */
 function theme_certificate_history_form($form) {
+  // TODO: Should this theme certificate_history_form be declared in hook_theme()?
   $rows = array();
   $header = array(t('User'), t('Course'), t('Operations'));
   $rows = array(
@@ -255,7 +260,7 @@ function theme_certificate_history_form($form) {
   );
 
   $caption = t('');
-  $output = theme('table', $header, $rows, array('id' => 'certificates-history'), $caption);
+  $output = theme('table', array('header' => $header, 'rows' => $rows, 'attributes' => array('id' => 'certificates-history'), 'caption' => $caption));
   $output .= drupal_render($form);
 
   return $output;
@@ -264,7 +269,7 @@ function theme_certificate_history_form($form) {
 /**
  * Form to select which content profile field values are part of which group.
  */
-function certificate_field_grouping_form() {
+function certificate_field_grouping_form($form, &$form_state) {
   $form = array();
 
   // Map against a CCK content_profile field.
@@ -276,7 +281,7 @@ function certificate_field_grouping_form() {
       '#prefix' => '<div>',
       '#suffix' => '</div>',
       '#type' => 'markup',
-      '#value' => l('Add a new group?', 'admin/build/certificates/mapping/groups/add'),
+      '#value' => l('Add a new group?', 'admin/structure/certificates/mapping/groups/add'),
     );
 
 
@@ -340,7 +345,11 @@ function certificate_field_grouping_form_submit(&$form, &$form_state) {
   drupal_set_message('Grouping settings updated.');
 }
 
-function certificate_field_grouping_add_form() {
+/**
+ * @todo Please document this function.
+ * @see http://drupal.org/node/1354
+ */
+function certificate_field_grouping_add_form($form, &$form_state) {
   $form = array();
 
   $form['fieldgroup_name'] = array(
@@ -386,7 +395,7 @@ function certificate_field_grouping_add_form_submit(&$form, &$form_state) {
   $fieldgroups[$fieldgroup_name] = $fieldgroup_title;
   variable_set('certificate_field_groups', $fieldgroups);
   drupal_set_message(t('Fieldgroup %f created.', array('%f' => $fieldgroup_name)));
-  drupal_goto('admin/build/certificates/mapping/groups');
+  drupal_goto('admin/structure/certificates/mapping/groups');
 }
 
 /**
@@ -400,7 +409,7 @@ function certificate_field_grouping_delete_form_submit(&$form, &$form_state) {
   variable_set('certificate_field_groups', $fieldgroups);
 
   drupal_set_message(t('Fieldgroup %f deleted.', array('%f' => $fieldgroup_name)));
-  drupal_goto('admin/build/certificates/mapping/groups');
+  drupal_goto('admin/structure/certificates/mapping/groups');
 }
 
 /**
@@ -415,7 +424,7 @@ function certificate_field_grouping_delete_form($form, $key) {
     '#access' => FALSE,
   );
 
-  return confirm_form($form, "Delete field group $key?", 'admin/build/certificates/mapping/groups', 'This action cannot be undone. Access to matched certificates will be lost.', 'Delete', 'Cancel');
+  return confirm_form($form, "Delete field group $key?", 'admin/structure/certificates/mapping/groups', 'This action cannot be undone. Access to matched certificates will be lost.', 'Delete', 'Cancel');
 }
 
 /**
@@ -432,7 +441,7 @@ function certificate_templates_list() {
       'title' => $row['title'],
       'edit' => l(t('edit'), "node/{$row['nid']}/edit?{$destination}", array('attributes' => array('class' => 'edit-link'))),
       'delete' => l(t('delete'), "node/{$row['nid']}/delete?{$destination}", array('attributes' => array('class' => 'delete-link'))),
-      'preview' => l(t('PDF'), "admin/build/certificates/templates/preview/{$row['nid']}", array('attributes' => array('class' => 'preview-link'))),
+      'preview' => l(t('PDF'), "admin/structure/certificates/templates/preview/" . $row['nid'], array('attributes' => array('class' => 'preview-link'))),
     );
   }
 
@@ -444,7 +453,7 @@ function certificate_templates_list() {
  *
  * Currently only has the option to enable snapshots.
  */
-function certificate_admin_settings_form() {
+function certificate_admin_settings_form($form, &$form_state) {
   $form = array();
 
   $form['certificate_snapshots'] = array(
@@ -460,13 +469,19 @@ function certificate_admin_settings_form() {
 /**
  * Form to clear certificate snapshots.
  */
-function certificate_admin_clear_form() {
+function certificate_admin_clear_form($form, &$form_state) {
   $form = array();
 
   $header = array(
     array(),
-    array('data' => 'Title', 'field' => 'n.title'),
-    array('data' => 'Count', 'field' => 'count'),
+    array(
+      'data' => 'Title',
+      'field' => 'n.title',
+    ),
+    array(
+      'data' => 'Count',
+      'field' => 'count',
+    ),
   );
 
   $sql = "select *, count(cs.uid) as count from {certificate_snapshots} cs
@@ -475,6 +490,7 @@ function certificate_admin_clear_form() {
 
   $sql .= tablesort_sql($header);
 
+  // TODO Please convert this statement to the D7 database API syntax.
   $result = db_query($sql);
   $nids = array();
   while ($row = db_fetch_object($result)) {
@@ -499,11 +515,19 @@ function certificate_admin_clear_form() {
 /**
  * Theme certificate_admin_clear_form.
  */
-function theme_certificate_admin_clear_form($form) {
+function theme_certificate_admin_clear_form($variables) {
+  $form = $variables['form'];
+  // TODO Please change this theme call to use an associative array for the $variables parameter.
   $header = array(
     theme('table_select_header_cell'),
-    array('data' => 'Title', 'field' => 'n.title'),
-    array('data' => 'Count', 'field' => 'cs_count')
+    array(
+      'data' => 'Title',
+      'field' => 'n.title',
+    ),
+    array(
+      'data' => 'Count',
+      'field' => 'cs_count',
+    ),
   );
 
   if (!empty($form['cs']['title'])) {
@@ -519,7 +543,7 @@ function theme_certificate_admin_clear_form($form) {
     return "No snapshots to clear.";
   }
 
-  return theme('table', $header, $rows) . drupal_render($form);
+  return theme('table', array('header' => $header, 'rows' => $rows)) . drupal_render_children($form);
 }
 
 /**
@@ -536,6 +560,7 @@ function certificate_admin_clear_form_submit(&$form, &$form_state) {
 
   if (count($nids)) {
     $placeholders = db_placeholders($nids);
+    // TODO Please convert this statement to the D7 database API syntax.
     db_query("delete from {certificate_snapshots} where nid in ($placeholders)", $nids);
 
     drupal_set_message('Cleared certificate snapshots.');

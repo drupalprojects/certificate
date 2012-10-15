@@ -1,9 +1,13 @@
 <?php
 
+/**
+ * @todo Please document this function.
+ * @see http://drupal.org/node/1354
+ */
 function signup_certificate_access_certificate($node, $user) {
   if (in_array($node->type, signup_content_types())) {
     $sql = "select 1 from {signup_log} where nid = %d and uid = %d and attended = 1";
-    $attended = db_result(db_query($sql, $node->nid, $user->uid));
+    $attended = db_query($sql, $node->nid, $user->uid)->fetchField();
     return (bool) $attended;
   }
 }

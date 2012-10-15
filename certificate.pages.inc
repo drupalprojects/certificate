@@ -78,7 +78,7 @@ function certificate_single($account, $node) {
       // Print module gets around this because the meta tag in Drupal is already
       // set - but here, we have to add it since we are only delivering the node
       // body.
-      $output = '<html><head><meta charset="utf-8"/></head><body>' . theme('certificate_certificate', $node, $account, $template) . '</body></html>';
+      $output = '<html><head><meta charset="utf-8"/></head><body>' . theme('certificate_certificate', array('node' => $node, 'account' => $account, 'template' => $template)) . '</body></html>';
 
       // Now save this generated certificate as a 'snapshot' in the database.
       $snapshot['uid'] = $account->uid;
@@ -98,7 +98,7 @@ function certificate_single($account, $node) {
   $print_pdf_pdf_tool = variable_get('print_pdf_pdf_tool', '');
   if ($print_pdf_pdf_tool == '') {
     if ($user->uid == 1) {
-      drupal_set_message('Certificate cannot be displayed because you have not selected a PDF generation tool in !link.', array('!link' => l('Printer, e-mail and PDF versions', 'admin/settings/print/pdf') . '.', 'error'));
+      drupal_set_message('Certificate cannot be displayed because you have not selected a PDF generation tool in !link.', array('!link' => l('Printer, e-mail and PDF versions', 'admin/config/print/pdf') . '.', 'error'));
     }
     else {
       drupal_set_message('PDF generation tool is not configured.');
@@ -127,12 +127,12 @@ function certificate_single($account, $node) {
 function certificate_preview($template_id) {
   $template = node_load($template_id);
   if ($template) {
-    $output = '<html><head><meta charset="utf-8"/></head><body>' . theme('certificate_certificate', $node, $account, $template) . '</body></html>';
+    $output = '<html><head><meta charset="utf-8"/></head><body>' . theme('certificate_certificate', array('node' => $node, 'account' => $account, 'template' => $template)) . '</body></html>';
   }
 
   $print_pdf_pdf_tool = variable_get('print_pdf_pdf_tool', '');
   if ($print_pdf_pdf_tool == '') {
-    drupal_set_message('Certificate cannot be displayed because you have not selected a PDF generation tool in !link.', array('!link' => l('Printer, e-mail and PDF versions', 'admin/settings/print/pdf') . '.', 'error'));
+    drupal_set_message('Certificate cannot be displayed because you have not selected a PDF generation tool in !link.', array('!link' => l('Printer, e-mail and PDF versions', 'admin/config/print/pdf') . '.', 'error'));
     return '';
   }
 
@@ -158,7 +158,10 @@ function certificate_preview($template_id) {
  *
  * @return The certificate HTML with all tokens translated.
  */
-function theme_certificate_certificate($node, $account, $template) {
+function theme_certificate_certificate($variables) {
+  $node = $variables['node'];
+  $account = $variables['account'];
+  $template = $variables['template'];
   $types = array(
     'global' => NULL,
     'node' => $node,
@@ -179,7 +182,7 @@ function theme_certificate_certificate($node, $account, $template) {
     $template->body = token_replace_multiple($template->body, $types);
   }
 
-  $template->body = check_markup($template->body, $template->format, FALSE);
+  $template->body = check_markup($template->body, $template->format, $langcode = '' /* TODO Set this variable. */, FALSE);
 
   return $template->body;
 }

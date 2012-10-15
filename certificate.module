@@ -6,13 +6,13 @@
  */
 
 /**
- * Implementation of hook_node_info().
+ * Implements hook_node_info().
  */
 function certificate_node_info() {
   $items = array(
     'certificate' => array(
       'name' => t('Certificate'),
-      'module' => 'certificate',
+      'base' => 'certificate',
       'description' => t('A tokenized certificate template that will be converted to a PDF and displayed to users who complete accredited activities.'),
       'has_title' => TRUE,
       'title_label' => t('Title'),
@@ -27,9 +27,9 @@ function certificate_node_info() {
 }
 
 /**
- * Implementation of hook_access().
+ * Implements hook_node_access().
  */
-function certificate_access($op, $node, $account) {
+function certificate_node_access($node, $op, $account) {
   if ($op == 'create') {
     return user_access('create certificate content', $account);
   }
@@ -47,11 +47,15 @@ function certificate_access($op, $node, $account) {
   }
 }
 
+/**
+ * @todo Please document this function.
+ * @see http://drupal.org/node/1354
+ */
 function certificate_form(&$node, $form_state) {
   // The site admin can decide if this node type has a title and body, and how
   // the fields should be labeled. We need to load these settings so we can
   // build the node form correctly.
-  $type = node_get_types('type', $node);
+  $type = node_type_get_type($node);
 
   if ($type->has_title) {
     $form['title'] = array(
@@ -77,7 +81,10 @@ function certificate_form(&$node, $form_state) {
     '#type' => 'radios',
     '#title' => t('Orientation'),
     '#default_value' => isset($node->certificate['orientation']) ? $node->certificate['orientation'] : '',
-    '#options' => array('portrait' => t('Portrait'), 'landscape' => t('Landscape')),
+    '#options' => array(
+      'portrait' => t('Portrait'),
+      'landscape' => t('Landscape'),
+    ),
     '#required' => TRUE,
     '#description' => 'The orientation of the generated certificate.',
   );
@@ -89,19 +96,19 @@ function certificate_form(&$node, $form_state) {
 }
 
 /**
- * Implementation of hook_menu().
+ * Implements hook_menu().
  */
 function certificate_menu() {
   $items = array();
 
-  $items['admin/build/certificates'] = array(
+  $items['admin/structure/certificates'] = array(
     'title' => 'Certificates',
     'access arguments' => array('administer certificates'),
     'file' => 'certificate.admin.inc',
     'page callback' => 'certificate_templates_list',
   );
 
-  $items['admin/build/certificates/templates'] = array(
+  $items['admin/structure/certificates/templates'] = array(
     'title' => 'List',
     'access arguments' => array('administer certificates'),
     'type' => MENU_DEFAULT_LOCAL_TASK,
@@ -110,7 +117,7 @@ function certificate_menu() {
     'weight' => -5,
   );
 
-  $items['admin/build/certificates/mapping'] = array(
+  $items['admin/structure/certificates/mapping'] = array(
     'title' => 'Mapping',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('certificate_settings_form'),
@@ -120,13 +127,13 @@ function certificate_menu() {
     'weight' => -4,
   );
 
-  $items['admin/build/certificates/mapping/list'] = array(
+  $items['admin/structure/certificates/mapping/list'] = array(
     'title' => 'Global',
     'type' => MENU_DEFAULT_LOCAL_TASK,
     'weight' => -5,
   );
 
-  $items['admin/build/certificates/mapping/groups'] = array(
+  $items['admin/structure/certificates/mapping/groups'] = array(
     'title' => 'Field groups',
     'description' => 'Set up certificate field groups',
     'page callback' => 'drupal_get_form',
@@ -136,7 +143,7 @@ function certificate_menu() {
     'type' => MENU_LOCAL_TASK,
   );
 
-  $items['admin/build/certificates/mapping/groups/add'] = array(
+  $items['admin/structure/certificates/mapping/groups/add'] = array(
     'title' => 'Add field group',
     'description' => 'Add a field group',
     'page callback' => 'drupal_get_form',
@@ -147,19 +154,19 @@ function certificate_menu() {
   );
 
   /*
-    $items['admin/build/certificates/mapping/groups/delete/%'] = array(
-    'title' => 'Delete field group',
-    'description' => 'Delete a field group',
-    'page callback' => 'drupal_get_form',
-    'page arguments' => array('certificate_field_grouping_delete_form'),
-    'page arguments' => array(6),
-    'access arguments' => array('administer certificates'),
-    'file' => 'certificate.admin.inc',
-    'type' => MENU_LOCAL_TASK,
-    );
+   $items['admin/structure/certificates/mapping/groups/delete/%'] = array(
+   'title' => 'Delete field group',
+   'description' => 'Delete a field group',
+   'page callback' => 'drupal_get_form',
+   'page arguments' => array('certificate_field_grouping_delete_form'),
+   'page arguments' => array(6),
+   'access arguments' => array('administer certificates'),
+   'file' => 'certificate.admin.inc',
+   'type' => MENU_LOCAL_TASK,
+   );
    */
 
-  $items['admin/build/certificates/settings'] = array(
+  $items['admin/structure/certificates/settings'] = array(
     'title' => 'Settings',
     'description' => 'Certificate settings.',
     'access arguments' => array('administer certificates'),
@@ -169,7 +176,7 @@ function certificate_menu() {
     'page arguments' => array('certificate_admin_settings_form'),
   );
 
-  $items['admin/build/certificates/clear'] = array(
+  $items['admin/structure/certificates/clear'] = array(
     'title' => 'Clear',
     'access arguments' => array('administer certificates'),
     'file' => 'certificate.admin.inc',
@@ -179,7 +186,7 @@ function certificate_menu() {
     'weight' => 99,
   );
 
-  $items['admin/build/certificates/templates/preview/%'] = array(
+  $items['admin/structure/certificates/templates/preview/%'] = array(
     'title' => 'Certificate Preview',
     'description' => 'Display earned certificate for this node',
     'page callback' => 'certificate_preview',
@@ -205,23 +212,47 @@ function certificate_menu() {
 }
 
 /**
- * Implementation of hook_perm().
+ * Implements hook_permission().
  */
-function certificate_perm() {
+function certificate_permission() {
   return array(
-    'access all certificates',
-    'administer certificates',
-    'create certificate content',
-    'delete own certificate content',
-    'delete any certificate content',
-    'edit own certificate content',
-    'edit any certificate content',
-    'view all user certificates',
+    'access all certificates' => array(
+      'title' => t('access all certificates'),
+      'description' => t('TODO Add a description for \'access all certificates\''),
+    ),
+    'administer certificates' => array(
+      'title' => t('administer certificates'),
+      'description' => t('TODO Add a description for \'administer certificates\''),
+    ),
+    'create certificate content' => array(
+      'title' => t('create certificate content'),
+      'description' => t('TODO Add a description for \'create certificate content\''),
+    ),
+    'delete own certificate content' => array(
+      'title' => t('delete own certificate content'),
+      'description' => t('TODO Add a description for \'delete own certificate content\''),
+    ),
+    'delete any certificate content' => array(
+      'title' => t('delete any certificate content'),
+      'description' => t('TODO Add a description for \'delete any certificate content\''),
+    ),
+    'edit own certificate content' => array(
+      'title' => t('edit own certificate content'),
+      'description' => t('TODO Add a description for \'edit own certificate content\''),
+    ),
+    'edit any certificate content' => array(
+      'title' => t('edit any certificate content'),
+      'description' => t('TODO Add a description for \'edit any certificate content\''),
+    ),
+    'view all user certificates' => array(
+      'title' => t('view all user certificates'),
+      'description' => t('TODO Add a description for \'view all user certificates\''),
+    ),
   );
 }
 
 /**
- * Implementation of hook_theme().
+ * Implements hook_theme().
  *
  * Returns information about every themable function defined by the module.
  */
@@ -229,12 +260,16 @@ function certificate_theme() {
   $items = array();
 
   $items['certificate_certificate'] = array(
-    'arguments' => array('certificate' => array()),
+    'variables' => array(
+      'node' => NULL,
+      'account' => NULL,
+      'template' => NULL,
+    ),
     'file' => 'certificate.pages.inc',
   );
 
   $items['certificate_admin_clear_form'] = array(
-    'arguments' => array('form' => NULL),
+    'render element' => 'form',
     'file' => 'certificate.admin.inc',
   );
 
@@ -251,7 +286,7 @@ function certificate_theme() {
  */
 function certificate_certificate_load_all() {
   $sql = "SELECT *, nid AS cid FROM {node} n WHERE type = 'certificate'";
-  $result = db_query($sql);
+  $result = db_query("SELECT *, nid AS cid FROM {node} n WHERE type = :type", array(':type' => 'certificate'));
 
   $certificates = array();
   while ($certificate = db_fetch_array($result)) {
@@ -268,7 +303,7 @@ function certificate_certificate_load_all() {
  */
 function certificate_course_node_template_settings($nid) {
   $sql = "SELECT * FROM {certificate_node} WHERE nid = %d";
-  $result = db_query($sql, $nid);
+  $result = db_query("SELECT * FROM {certificate_node} WHERE nid = :nid", array(':nid' => $nid));
 
   $node_template_settings = array();
   while ($node_template_setting = db_fetch_array($result)) {
@@ -279,7 +314,7 @@ function certificate_course_node_template_settings($nid) {
 }
 
 /**
- * Implements hook_form_alter for course nodes.
+ * Implements hook_form_alter for course nodes().
  */
 function certificate_form_alter(&$form, &$form_state, $form_id) {
   if (isset($form['#node'])) {
@@ -307,9 +342,14 @@ function certificate_form_alter(&$form, &$form_state, $form_id) {
   }
 }
 
+/**
+ * @todo Please document this function.
+ * @see http://drupal.org/node/1354
+ */
 function certificate_form_certificate_node_form_alter(&$form, &$form_state) {
   if (module_exists('token')) {
     // Embed token help.
+    // TODO Please change this theme call to use an associative array for the $variables parameter.
     $form['certificate_tokens'] = array(
       '#title' => 'Certificate tokens',
       '#type' => 'fieldset',
@@ -328,7 +368,11 @@ function certificate_form_certificate_node_form_alter(&$form, &$form_state) {
  */
 function certificate_update_node_mappings($nid, array $node_settings = NULL) {
   if (is_array($node_settings)) {
-    db_query("DELETE FROM {certificate_node} WHERE nid = %d", $nid);
+    // TODO Please review the conversion of this statement to the D7 database API syntax.
+    /* db_query("DELETE FROM {certificate_node} WHERE nid = %d", $nid) */
+    db_delete('certificate_node')
+  ->condition('nid', $nid)
+  ->execute();
     foreach ($node_settings as $mapper => $values) {
       foreach (array_filter($values) as $match => $cert_nid) {
         $record = array(
@@ -344,9 +388,10 @@ function certificate_update_node_mappings($nid, array $node_settings = NULL) {
 }
 
 /**
- * Implements hook_nodeapi.
+ * Implements hook_nodeapi().
  */
-function certificate_nodeapi(&$node, $op, $teaser = NULL, $page = NULL) {
+function certificate_nodeapi_OLD(&$node, $op, $teaser = NULL, $page = NULL) {
+  // TODO Remaining code in this function needs to be moved to the appropriate new hook function.
   if (certificate_node_is_certifiable($node)) {
     switch ($op) {
       case 'insert':
@@ -361,8 +406,16 @@ function certificate_nodeapi(&$node, $op, $teaser = NULL, $page = NULL) {
 
       case 'delete':
         // Clean up the certificate template tables for the deleted node.
-        db_query("DELETE FROM {certificate_node} WHERE nid = %d", $node->nid);
-        db_query("DELETE FROM {certificate_snapshots} WHERE nid = %d", $node->nid);
+        // TODO Please review the conversion of this statement to the D7 database API syntax.
+        /* db_query("DELETE FROM {certificate_node} WHERE nid = %d", $node->nid) */
+        db_delete('certificate_node')
+  ->condition('nid', $node->nid)
+  ->execute();
+        // TODO Please review the conversion of this statement to the D7 database API syntax.
+        /* db_query("DELETE FROM {certificate_snapshots} WHERE nid = %d", $node->nid) */
+        db_delete('certificate_snapshots')
+  ->condition('nid', $node->nid)
+  ->execute();
         break;
 
       case 'load':
@@ -376,7 +429,6 @@ function certificate_nodeapi(&$node, $op, $teaser = NULL, $page = NULL) {
         break;
     }
   }
-
   if ($node->type == 'certificate') {
     switch ($op) {
       case 'insert':
@@ -385,7 +437,7 @@ function certificate_nodeapi(&$node, $op, $teaser = NULL, $page = NULL) {
         if (isset($node->certificate)) {
           $record = $node->certificate;
           $record['nid'] = $node->nid;
-          if (db_result(db_query("select 1 from {certificate_node_settings} where nid = %d", $node->nid))) {
+          if (db_query("select 1 from {certificate_node_settings} where nid = %d", $node->nid)->fetchField()) {
             $keys = array('nid');
           }
           drupal_write_record('certificate_node_settings', $record, $keys);
@@ -400,7 +452,7 @@ function certificate_nodeapi(&$node, $op, $teaser = NULL, $page = NULL) {
 }
 
 /**
- * Implementation of hook_content_extra_fields().
+ * Implements hook_content_extra_fields().
  *
  * Allow the certificate download link to be sorted in the node edit forms.
  */
@@ -446,7 +498,7 @@ function certificate_node_is_certifiable($node) {
  */
 function certificate_snapshot_load($account, $node) {
   $sql = "SELECT * FROM {certificate_snapshots} WHERE uid = %d AND nid = %d";
-  $result = db_query($sql, $account->uid, $node->nid);
+  $result = db_query("SELECT * FROM {certificate_snapshots} WHERE uid = :uid AND nid = :nid", array(':uid' => $account->uid, ':nid' => $node->nid));
   return db_fetch_array($result);
 }
 
@@ -481,7 +533,12 @@ function certificate_snapshot_save($snapshot) {
  */
 function certificate_snapshot_delete($account, $node) {
   $sql = "DELETE FROM {certificate_snapshots} WHERE uid = %d AND nid = %d";
-  db_query($sql, $account->uid, $node->nid);
+  // TODO Please review the conversion of this statement to the D7 database API syntax.
+  /* db_query($sql, $account->uid, $node->nid) */
+  db_delete('certificate_snapshots')
+  ->condition('uid', $account->uid)
+  ->condition('nid', $node->nid)
+  ->execute();
   return TRUE;
 }
 
@@ -494,22 +551,27 @@ function certificate_snapshot_delete($account, $node) {
  */
 function certificate_snapshot_delete_by_node($node) {
   $sql = "DELETE FROM {certificate_snapshots} WHERE nid = %d";
-  db_query($sql, $node->nid);
+  // TODO Please review the conversion of this statement to the D7 database API syntax.
+  /* db_query($sql, $node->nid) */
+  db_delete('certificate_snapshots')
+  ->condition('nid', $node->nid)
+  ->execute();
   return TRUE;
 }
 
 /**
- * Implementation of hook_action_info().
+ * Implements hook_action_info().
  */
 function certificate_action_info() {
   $info = array();
 
   $info['certificate_reset_certificates_action'] = array(
     'type' => 'node',
-    'description' => t('Reset certificate snapshots for this node.'),
+    'label' => t('Reset certificate snapshots for this node.'),
     'configurable' => FALSE,
-    'hooks' => array(
-      'nodeapi' => array('insert', 'update'),
+    'triggers' => array(
+      'nodeapi_insert',
+      'nodeapi_update',
     ),
   );
 
@@ -620,16 +682,21 @@ function certificate_can_access_certificate($node, $account = NULL, $flush = FAL
 }
 
 /**
- * Implements hook_user().
- *
- * Clean up after user deletion.
+ * Implements hook_user_cancel().
  */
-function certificate_user($op, &$edit, &$account, $category = NULL) {
-  if ($op == 'delete') {
+function certificate_user_cancel($edit, $account, $method) {
+  if (TRUE) {
     $sql = "delete from {certificate_snapshots} where uid = %d";
     db_query($sql, $account->uid);
   }
 }
+
+/**
+ * Implements hook_user().
+ *
+ * Clean up after user deletion.
+ */
+function certificate_user_OLD($op, &$edit, &$account, $category = NULL) { }
 
 /**
  * Return an array of certificate templates suitable for use in an options
@@ -647,7 +714,7 @@ function certificate_get_template_options() {
 }
 
 /**
- * Implementation of hook_certificate_map_options().
+ * Implements hook_certificate_map_options().
  *
  * Provide a list of options to the user that can be mapped to certificate
  * templates.
@@ -691,7 +758,7 @@ function certificate_certificate_map_options() {
 }
 
 /**
- * Implementation of hook_certificate_map().
+ * Implements hook_certificate_map().
  *
  * Return the key of the mapping to use.
  *
