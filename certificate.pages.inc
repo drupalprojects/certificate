@@ -52,8 +52,8 @@ function certificate_single($account, $node) {
   }
   else {
     $hooks = module_invoke_all('certificate_map_options');
-    $sql = "select * from {certificate_node} where nid = %d or nid = %d order by nid asc";
-    $result = db_query($sql, 0, $node->nid);
+    $sql = "SELECT * FROM {certificate_node} WHERE nid = 0 or nid = :nid ORDER BY nid ASC";
+    $result = db_query($sql, array(':nid' => $node->nid));
     $mapping = array();
     while ($row = $result->fetch()) {
       $mapping[$row->mapper][$row->type] = $row->template;
