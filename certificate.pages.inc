@@ -172,17 +172,19 @@ function theme_certificate_certificate($variables) {
     ),
   );
 
+  $body = $template->body[LANGUAGE_NONE][0]['value'];
+
   // Invoke hook_certificate_body_alter() to allow all modules to alter the template body.
-  drupal_alter('certificate_body', $template->body, $account, $node);
+  drupal_alter('certificate_body', $body, $account, $node);
 
   if (module_exists('token')) {
     if (module_exists('purl')) {
       purl_disable(TRUE);
     }
-    $template->body = token_replace_multiple($template->body, $types);
+    $body = token_replace_multiple($body, $types);
   }
 
-  $template->body = check_markup($template->body, $template->format, LANGUAGE_NONE, FALSE);
+  $body = check_markup($body, $template->body[LANGUAGE_NONE][0]['format']);
 
-  return $template->body;
+  return $body;
 }
