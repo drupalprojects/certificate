@@ -105,10 +105,11 @@ function certificate_alter_node_form(&$form, &$form_state) {
   if (user_access('administer certificates')) {
     $form['certificate'] = array(
       '#type' => 'fieldset',
-      '#title' => t('Certificate template settings'),
+      '#title' => t('Certificate settings'),
       '#weight' => 100,
       '#tree' => TRUE,
-      '#group' => TRUE,
+      '#group' => 'additional_settings',
+      '#description' => t('Set up the selection criteria for awarding certificates.'),
     );
 
     certificate_mapping_form($form, $form_state);
