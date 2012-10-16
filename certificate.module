@@ -307,6 +307,7 @@ function certificate_form_alter(&$form, &$form_state, $form_id) {
       '#title' => 'Certificate settings',
       '#collapsed' => TRUE,
       '#collapsible' => TRUE,
+      '#group' => 'additional_settings',
     );
 
     $form['certificate']['certificate_certifiable'] = array(
