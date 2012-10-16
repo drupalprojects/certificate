@@ -439,8 +439,8 @@ function certificate_templates_list() {
     $destination = drupal_get_destination();
     $certificates[] = array(
       'title' => $row['title'],
-      'edit' => l(t('edit'), "node/{$row['nid']}/edit?{$destination}", array('attributes' => array('class' => 'edit-link'))),
-      'delete' => l(t('delete'), "node/{$row['nid']}/delete?{$destination}", array('attributes' => array('class' => 'delete-link'))),
+      'edit' => l(t('edit'), "node/{$row['nid']}/edit", array('query' => $destination, 'attributes' => array('class' => 'edit-link'))),
+      'delete' => l(t('delete'), "node/{$row['nid']}/delete", array('query' => $destination, 'attributes' => array('class' => 'delete-link'))),
       'preview' => l(t('PDF'), "admin/structure/certificates/templates/preview/" . $row['nid'], array('attributes' => array('class' => 'preview-link'))),
     );
   }
