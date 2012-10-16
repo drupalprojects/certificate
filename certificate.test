@@ -53,7 +53,7 @@ class CertificateTestCase extends DrupalWebTestCase {
     $this->drupalLogin($u1);
     $GLOBALS['certificate_ok'] = TRUE;
 
-    $this->drupalGet("node/{$activity_node->nid}/certificate", array('query' => 'certificate_ok'));
+    $this->drupalGet("node/{$activity_node->nid}/certificate", array('query' => array('certificate_ok' => 1)));
     $this->assertNoResponse(403, 'Did not get access denied.');
     $this->assertNoText('Custom access denied message.', 'Did not find moduled provided access denied message on certificate page.');
     $this->assertText('Sorry, there is no certificate available.', 'Found no certificate available text.');
@@ -67,7 +67,7 @@ class CertificateTestCase extends DrupalWebTestCase {
 
     certificate_course_node_template_settings($activity_node->nid);
 
-    $this->drupalGet("node/{$activity_node->nid}/certificate", array('query' => 'certificate_ok'));
+    $this->drupalGet("node/{$activity_node->nid}/certificate", array('query' => array('certificate_ok' => 1)));
     $this->assertNoResponse(403, 'Did not get access denied.');
     $this->assertNoText('Custom access denied message.', 'Did not find module provided access denied message on certificate page.');
     $this->assertNoText('Sorry, there is no certificate available.', 'User received certificate.');

@@ -375,7 +375,9 @@ function certificate_node_insert($node) {
 function certificate_node_update($node) {
   if (certificate_node_is_certifiable($node)) {
     // Update node mappings from a certifiable activity.
-    certificate_update_node_mappings($node->nid, $node->certificate['map']);
+    if (isset($node->certificate)) {
+      certificate_update_node_mappings($node->nid, $node->certificate['map']);
+    }
   }
 
   if ($node->type == 'certificate') {
