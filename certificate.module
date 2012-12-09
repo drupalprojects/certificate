@@ -475,7 +475,6 @@ function certificate_node_is_certifiable($node) {
  *   A single certificate snapshot in array format, or FALSE if none matched the incoming ID.
  */
 function certificate_snapshot_load($account, $node) {
-  $sql = "SELECT * FROM {certificate_snapshots} WHERE uid = %d AND nid = %d";
   $result = db_query("SELECT * FROM {certificate_snapshots} WHERE uid = :uid AND nid = :nid", array(':uid' => $account->uid, ':nid' => $node->nid));
   return db_fetch_array($result);
 }
@@ -565,7 +564,7 @@ function certificate_rules_action_info() {
   $info['certificate_rules_award_certificate'] = array(
     'label' => t('Award certificate'),
     'configurable' => FALSE,
-    'module' => 'Certificate',
+    'module' => 'certificate',
   );
 
   return $info;
@@ -695,15 +694,15 @@ function certificate_certificate_map_options() {
 
   if (module_exists('rules')) {
     $rules = array();
-    foreach (rules_get_configured_items('rule_sets') as $key => $ruleset) {
-      if (in_array('certificate', $ruleset['categories'])) {
-        $rules[$key] = $ruleset['label'];
+    foreach (rules_get_components() as $key => $ruleset) {
+      if (array_search('certificate', $ruleset->tags) !== FALSE) {
+        $rules[$key] = $ruleset->label;
       }
     }
     $options['rules'] = array(
-      'title' => "Ruleset",
+      'title' => 'Rules',
       'options' => $rules,
-      'description' => 'When a ruleset ends with "Award certificate", the selected certificate will be awarded.',
+      'description' => 'When a rule or ruleset ends with "Award certificate", the selected certificate will be awarded.',
     );
   }
 
@@ -739,7 +738,7 @@ function certificate_certificate_map($node, $user, $map_type, $options) {
     foreach ($options as $key) {
       global $_certificate_award;
       $_certificate_award = FALSE;
-      rules_invoke_rule_set($key, array('node' => $node, 'user' => $user));
+      rules_invoke_component($key, $node, $user);
       if ($_certificate_award) {
         return $key;
       }
