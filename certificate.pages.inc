@@ -181,7 +181,7 @@ function theme_certificate_certificate($variables) {
     if (module_exists('purl')) {
       purl_disable(TRUE);
     }
-    $body = token_replace_multiple($body, $types);
+    $body = token_replace($body, $types);
   }
 
   $body = check_markup($body, $template->body[LANGUAGE_NONE][0]['format']);
