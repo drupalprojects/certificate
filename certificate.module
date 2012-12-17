@@ -476,7 +476,7 @@ function certificate_node_is_certifiable($node) {
  */
 function certificate_snapshot_load($account, $node) {
   $result = db_query("SELECT * FROM {certificate_snapshots} WHERE uid = :uid AND nid = :nid", array(':uid' => $account->uid, ':nid' => $node->nid));
-  return db_fetch_array($result);
+  return $result->fetch(PDO::FETCH_ASSOC);
 }
 
 /**
