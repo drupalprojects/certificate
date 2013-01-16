@@ -385,9 +385,7 @@ function certificate_node_update($node) {
     if (isset($node->certificate)) {
       $record = $node->certificate;
       $record['nid'] = $node->nid;
-      if (db_query("select 1 from {certificate_node_settings} where nid = :nid", array(':nid' => $node->nid))->fetchField()) {
-        $keys = array('nid');
-      }
+      $keys = db_query("SELECT 1 FROM {certificate_node_settings} WHERE nid = :nid", array(':nid' => $node->nid))->fetchField() ? array('nid') : array();
       drupal_write_record('certificate_node_settings', $record, $keys);
     }
   }
