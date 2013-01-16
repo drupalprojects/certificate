@@ -112,12 +112,7 @@ function certificate_single($account, $node) {
     print $output;
   }
   else {
-    // Rewrite image URLs using Print.
-    $pattern = '!<(img\s[^>]*?)>!is';
-    $output = preg_replace_callback($pattern, '_print_rewrite_urls', $output);
-    global $conf;
-    $conf['print_pdf_page_orientation'] = $template->certificate['orientation'];
-    print_pdf_generate_html(array('node' => $node), $output, $node->title . '.pdf');
+    certificate_print_pdf_wrapper($node->title . '.pdf', $output, $template->certificate['orientation']);
   }
 }
 
@@ -137,14 +132,7 @@ function certificate_preview($template_id) {
     return '';
   }
 
-  module_load_include('pages.inc', 'print_pdf', 'print_pdf');
-
-  // Rewrite image URLs using Print.
-  $pattern = '!<(img\s[^>]*?)>!is';
-  $output = preg_replace_callback($pattern, '_print_rewrite_urls', $output);
-  global $conf;
-  $conf['print_pdf_page_orientation'] = $template->certificate['orientation'];
-  print_pdf_generate_html(array('node' => NULL), $output, $template->title . '.pdf');
+  certificate_print_pdf_wrapper($template->title . '.pdf', $output, $template->certificate['orientation']);
 }
 
 /**
@@ -188,4 +176,34 @@ function theme_certificate_certificate($variables) {
   $body = check_markup($body, $template->body[LANGUAGE_NONE][0]['format']);
 
   return $body;
+}
+
+/**
+ * Wrapper to use correct Print API functions across versions.
+ */
+function certificate_print_pdf_wrapper($filename, $html, $orientation) {
+  module_load_include('pages.inc', 'print_pdf', 'print_pdf');
+
+  // Rewrite image URLs using Print.
+  $pattern = '!<(img\s[^>]*?)>!is';
+  $html = preg_replace_callback($pattern, '_print_rewrite_urls', $html);
+
+  if (drupal_get_installed_schema_version('print') > 7200) {
+    // Print 2.x
+    $meta = array(
+      'url',
+      'name',
+      'title',
+      'node',
+    );
+    print_pdf_generate_html($html, $meta, $filename, NULL, $orientation);
+  }
+  else {
+    // Print 1.x
+    global $conf;
+    $conf['print_pdf_page_orientation'] = $orientation;
+    print_pdf_generate_html(array('node' => NULL), $html, $filename);
+  }
+
+  exit;
 }
