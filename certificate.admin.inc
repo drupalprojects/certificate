@@ -485,16 +485,16 @@ function certificate_admin_clear_form($form, &$form_state) {
     ),
   );
 
-  $sql = "select *, count(cs.uid) as count from {certificate_snapshots} cs
-  left join {node} n on (cs.nid = n.nid)
-  group by cs.nid";
+  $sql = "SELECT *, count(cs.uid) AS count FROM {certificate_snapshots} cs
+  INNER JOIN {node} n ON (cs.nid = n.nid)
+  GROUP BY cs.nid";
 
   $result = db_query($sql);
   $nids = array();
   while ($row = $result->fetch()) {
     $nids[$row->nid] = '';
-    $form['cs']['title'][$row->nid]['#value'] = $row->title;
-    $form['cs']['count'][$row->nid]['#value'] = $row->count;
+    $form['cs']['title'][$row->nid]['#markup'] = $row->title;
+    $form['cs']['count'][$row->nid]['#markup'] = $row->count;
   }
 
   $form['cs']['nids'] = array(
@@ -557,10 +557,9 @@ function certificate_admin_clear_form_submit(&$form, &$form_state) {
   }
 
   if (count($nids)) {
-    $placeholders = db_placeholders($nids);
-    // TODO Please convert this statement to the D7 database API syntax.
-    db_query("delete from {certificate_snapshots} where nid in ($placeholders)", $nids);
-
+    db_delete('certificate_snapshots')
+    ->condition('nid', $nids, 'IN')
+    ->execute();
     drupal_set_message('Cleared certificate snapshots.');
   }
 }
