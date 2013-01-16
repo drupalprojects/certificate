@@ -125,9 +125,10 @@ function certificate_single($account, $node) {
  * Preview certificate template as PDF.
  */
 function certificate_preview($template_id) {
+  global $user;
   $template = node_load($template_id);
   if ($template) {
-    $output = '<html><head><meta charset="utf-8"/></head><body>' . theme('certificate_certificate', array('node' => $node, 'account' => $account, 'template' => $template)) . '</body></html>';
+    $output = '<html><head><meta charset="utf-8"/></head><body>' . theme('certificate_certificate', array('node' => NULL, 'account' => $user, 'template' => $template)) . '</body></html>';
   }
 
   $print_pdf_pdf_tool = variable_get('print_pdf_pdf_tool', '');
@@ -143,7 +144,7 @@ function certificate_preview($template_id) {
   $output = preg_replace_callback($pattern, '_print_rewrite_urls', $output);
   global $conf;
   $conf['print_pdf_page_orientation'] = $template->certificate['orientation'];
-  print_pdf_generate_html(array('node' => $node), $output, $template->title . '.pdf');
+  print_pdf_generate_html(array('node' => NULL), $output, $template->title . '.pdf');
 }
 
 /**
