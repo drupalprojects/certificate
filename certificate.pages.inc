@@ -188,7 +188,7 @@ function certificate_print_pdf_wrapper($filename, $html, $orientation) {
   $pattern = '!<(img\s[^>]*?)>!is';
   $html = preg_replace_callback($pattern, '_print_rewrite_urls', $html);
 
-  if (drupal_get_installed_schema_version('print') > 7200) {
+  if (function_exists('_print_scan_libs')) {
     // Print 2.x
     $meta = array(
       'url',
