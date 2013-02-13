@@ -98,10 +98,10 @@ function certificate_single($account, $node) {
   $print_pdf_pdf_tool = variable_get('print_pdf_pdf_tool', '');
   if ($print_pdf_pdf_tool == '') {
     if ($user->uid == 1) {
-      drupal_set_message('Certificate cannot be displayed because you have not selected a PDF generation tool in !link.', array('!link' => l('Printer, e-mail and PDF versions', 'admin/config/print/pdf') . '.', 'error'));
+      drupal_set_message(t('Certificate cannot be displayed because you have not selected a PDF generation tool in !link.', array('!link' => l('Printer, e-mail and PDF versions', 'admin/config/print/pdf'))) . '.', 'error');
     }
     else {
-      drupal_set_message('PDF generation tool is not configured.');
+      drupal_set_message(t('PDF generation tool is not configured.'));
     }
     return ' ';
   }
@@ -128,7 +128,7 @@ function certificate_preview($template_id) {
 
   $print_pdf_pdf_tool = variable_get('print_pdf_pdf_tool', '');
   if ($print_pdf_pdf_tool == '') {
-    drupal_set_message('Certificate cannot be displayed because you have not selected a PDF generation tool in !link.', array('!link' => l('Printer, e-mail and PDF versions', 'admin/config/print/pdf') . '.', 'error'));
+    drupal_set_message(t('Certificate cannot be displayed because you have not selected a PDF generation tool in !link.', array('!link' => l('Printer, e-mail and PDF versions', 'admin/config/print/pdf'))) . '.', 'error');
     return '';
   }
 

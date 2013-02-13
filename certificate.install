@@ -115,9 +115,6 @@ function certificate_schema() {
  * a second time.
  */
 function certificate_install() {
-  // TODO The drupal_(un)install_schema functions are called automatically in D7.
-  // drupal_install_schema('certificate')
-
   // Set certificate variables.
   variable_set('node_options_certificate', array(0 => 'revision'));
   variable_set('comment_certificate', 0);
@@ -131,14 +128,12 @@ function certificate_install() {
  * Implements hook_uninstall().
  */
 function certificate_uninstall() {
-  // TODO The drupal_(un)install_schema functions are called automatically in D7.
-  // drupal_uninstall_schema('certificate')
   cache_clear_all('certificate:*', 'cache', TRUE);
 
   db_delete('variable')
     ->condition('name', "certificate_%", "LIKE")
     ->execute();
-  
+
   variable_del('node_options_certificate');
   variable_del('comment_certificate');
 }
@@ -149,7 +144,7 @@ function certificate_uninstall() {
 function certificate_requirements($phase) {
   if ($phase == 'runtime') {
     if (variable_get('print_pdf_pdf_tool', '') == '') {
-      drupal_set_message('Certificates will not display before selecting a PDF generation tool in !link.', array('!link' => l('Printer, e-mail and PDF versions', 'admin/config/print/pdf')));
+      drupal_set_message(t('Certificates will not display before selecting a PDF generation tool in !link.', array('!link' => l('Printer, e-mail and PDF versions', 'admin/config/print/pdf'))));
     }
   }
 }

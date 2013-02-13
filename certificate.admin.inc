@@ -343,7 +343,7 @@ function certificate_field_grouping_form($form, &$form_state) {
 function certificate_field_grouping_form_submit(&$form, &$form_state) {
   variable_set('certificate_field_grouping', $form_state['values']['map']);
 
-  drupal_set_message('Grouping settings updated.');
+  drupal_set_message(t('Grouping settings updated.'));
 }
 
 /**
@@ -558,8 +558,8 @@ function certificate_admin_clear_form_submit(&$form, &$form_state) {
 
   if (count($nids)) {
     db_delete('certificate_snapshots')
-    ->condition('nid', $nids, 'IN')
-    ->execute();
-    drupal_set_message('Cleared certificate snapshots.');
+      ->condition('nid', $nids, 'IN')
+      ->execute();
+    drupal_set_message(t('Cleared certificate snapshots.'));
   }
 }
