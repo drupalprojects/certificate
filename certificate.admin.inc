@@ -120,8 +120,8 @@ function certificate_alter_node_form(&$form, &$form_state) {
  * Add mapping elements to a form.
  */
 function certificate_mapping_form(&$form, &$form_state) {
-  if (isset($form['nid']['#value'])) {
-    $nid = $form['nid']['#value'];
+  if (!empty($form['#node']->nid)) {
+    $nid = $form['#node']->nid;
   }
   else {
     $nid = 0;
@@ -137,7 +137,10 @@ function certificate_mapping_form(&$form, &$form_state) {
   // Custom (module-provided) mappings.
   $mappings = module_invoke_all('certificate_map_options');
 
-  $options = array('' => '- no certificate -');
+  $options = array(
+    '-1' => '- no certificate -',
+    '' => '- global mapping -',
+  );
   foreach (certificate_certificate_load_all() as $cert) {
     $options[$cert['nid']] = $cert['title'];
   }
@@ -274,15 +277,14 @@ function certificate_field_grouping_form($form, &$form_state) {
   $form = array();
 
   // Map against a CCK content_profile field.
-  if (module_exists('content_profile')) {
+  if (module_exists('profile2')) {
 
     $groupsinfo = variable_get('certificate_field_groups', array());
     $fieldgroups = variable_get('certificate_field_grouping', array());
     $form['certificate_add_new_group'] = array(
       '#prefix' => '<div>',
       '#suffix' => '</div>',
-      '#type' => 'markup',
-      '#value' => l('Add a new group?', 'admin/structure/certificates/mapping/groups/add'),
+      '#markup' => l('Add a new group?', 'admin/structure/certificates/mapping/groups/add'),
     );
 
 
@@ -326,7 +328,7 @@ function certificate_field_grouping_form($form, &$form_state) {
     }
   }
   else {
-    $form['disabled']['#value'] = '<p>' . t('Please enable content_profile to work with profile field grouping.') . '</p>';
+    $form['disabled']['#markup'] = '<p>' . t('Please enable profile2 to work with profile field grouping.') . '</p>';
   }
 
   $form['submit'] = array(

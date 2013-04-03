@@ -290,17 +290,11 @@ function certificate_course_node_template_settings($nid) {
 }
 
 /**
- * Implements hook_form_alter for course nodes().
+ * Implements hook_form_alter().
+ *
+ * Add certifiable checkbox to a content type.
  */
 function certificate_form_alter(&$form, &$form_state, $form_id) {
-  if (isset($form['#node'])) {
-    if (certificate_node_is_certifiable($form['#node']) && strpos($form_id, '_node_form') !== FALSE) {
-      // Add per-node certificate settings.
-      module_load_include('inc', 'certificate', 'certificate.admin');
-      certificate_alter_node_form($form, $form_state);
-    }
-  }
-
   if ($form_id == 'node_type_form') {
     $form['certificate'] = array(
       '#type' => 'fieldset',
@@ -320,22 +314,34 @@ function certificate_form_alter(&$form, &$form_state, $form_id) {
 }
 
 /**
- * @todo Please document this function.
- * @see http://drupal.org/node/1354
+ * Implements hook_field_attach_form().
  */
-function certificate_form_certificate_node_form_alter(&$form, &$form_state) {
-  if (module_exists('token')) {
-    // Embed token help.
-    // TODO Please change this theme call to use an associative array for the $variables parameter.
-    $form['certificate_tokens'] = array(
-      '#title' => 'Certificate tokens',
-      '#type' => 'fieldset',
-      '#collapsible' => TRUE,
-      '#collapsed' => FALSE,
-      '#value' => theme('token_tree', array('global', 'node', 'user', 'certificate'), FALSE),
-    );
+function certificate_field_attach_form($entity_type, $entity, &$form, &$form_state, $langcode) {
+  if (certificate_node_is_certifiable($entity)) {
+    // Add per-node certificate settings.
+    module_load_include('inc', 'certificate', 'certificate.admin');
+    certificate_alter_node_form($form, $form_state);
   }
 
+  if ($entity_type == 'certificate') {
+    if (module_exists('token')) {
+      // Embed token help.
+      // TODO Please change this theme call to use an associative array for the $variables parameter.
+      $form['certificate_tokens'] = array(
+        '#title' => 'Certificate tokens',
+        '#type' => 'fieldset',
+        '#collapsible' => TRUE,
+        '#collapsed' => FALSE,
+        '#value' => theme('token_tree', array('global', 'node', 'user', 'certificate'), FALSE),
+      );
+    }
+  }
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function certificate_form_certificate_node_form_alter(&$form, &$form_state) {
   // No preview - we want users to see it in PDF for accuracy.
   $form['buttons']['preview'] = NULL;
 }
@@ -459,7 +465,10 @@ function certificate_field_extra_fields() {
  * @return bool
  */
 function certificate_node_is_certifiable($node) {
-  return variable_get("certificate_certifiable_{$node->type}", 0);
+  if (isset($node->type)) {
+    return variable_get("certificate_certifiable_{$node->type}", 0);
+  }
+  return FALSE;
 }
 
 /**

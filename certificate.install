@@ -57,7 +57,7 @@ function certificate_schema() {
       'template' => array(
         'type' => 'int',
         'not null' => TRUE,
-        'unsigned' => TRUE,
+        'unsigned' => FALSE,
         'default' => 0,
         'description' => 'The certificate node ID to deliver on a match.',
       ),
@@ -182,4 +182,19 @@ function certificate_update_6102() {
   }
 
   variable_set('certificate_field_groups', $new_fieldgroups);
+}
+
+/**
+ * Change template field to allow signed integers, to allow for global and no
+ * certificate map values.
+ */
+function certificate_update_7001() {
+  db_change_field('certificate_node', 'template', 'template', array(
+    'type' => 'int',
+    'not null' => TRUE,
+    'unsigned' => FALSE,
+    'default' => 0,
+    'description' => 'The certificate node ID to deliver on a match.',
+  ));
+  return t('Changed template field to allow signed integers.');
 }
