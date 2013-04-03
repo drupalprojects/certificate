@@ -147,7 +147,7 @@ function certificate_mapping_form(&$form, &$form_state) {
       '#title' => check_plain($map['title']),
       '#type' => 'fieldset',
       '#group' => TRUE,
-      '#description' => check_plain($map['description']),
+      '#description' => filter_xss_admin($map['description']),
       '#collapsed' => TRUE,
       '#collapsible' => TRUE,
     );
