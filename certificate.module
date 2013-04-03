@@ -428,30 +428,29 @@ function certificate_node_view($node, $view_mode, $langcode) {
 }
 
 /**
- * Implements hook_content_extra_fields().
- *
- * Allow the certificate download link to be sorted in the node edit forms.
+ * Implements hook_field_extra_fields().
  */
-function certificate_content_extra_fields($type_name) {
-  $extras = array();
-
-  $node = new stdClass;
-  $node->type = $type_name;
-  if (certificate_node_is_certifiable($node)) {
-    $extras['certificate'] = array(
-      'label' => t('Certificate'),
-      'description' => t('Certificate link.'),
-      'weight' => 10,
-    );
-  }
-  if ($type_name == 'certificate') {
-    $extras['certificate_tokens'] = array(
-      'label' => t('Certificate tokens'),
-      'description' => t('Tokens to insert into the certificate.'),
-    );
+function certificate_field_extra_fields() {
+  $extra = array();
+  foreach (entity_get_info() as $entity_type => $entity_info) {
+    foreach (array_keys($entity_info['bundles']) as $bundle) {
+      if (variable_get('certificate_certifiable_' . $bundle)) {
+        $extra[$entity_type][$bundle]['form']['certificate'] = array(
+          'label' => t('Certificate'),
+          'description' => t('Certificate module elements'),
+          'weight' => 0,
+        );
+      }
+    }
   }
 
-  return $extras;
+  $extra['node']['certificate']['form']['certificate'] = array(
+    'label' => t('Certificate tokens'),
+    'description' => t('Tokens to insert into the certificate'),
+    'weight' => 0,
+  );
+
+  return $extra;
 }
 
 /**
