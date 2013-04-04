@@ -712,13 +712,13 @@ function certificate_certificate_map_options() {
     );
   }
 
-  if (module_exists('profile2')) {
-    $fieldgroups = variable_get('certificate_field_groups', array());
+  $fieldgroups = variable_get('certificate_field_groups', array());
+  if (!empty($fieldgroups)) {
 
-    $options['profile2'] = array(
-      'title' => t('Profile2'),
+    $options['profile'] = array(
+      'title' => t('Profiles'),
       'options' => $fieldgroups,
-      'description' => t('If a user matches a value in a field group, the selected certificate will be awarded.'),
+      'description' => t("If the user's profile matches a value in a field group, the selected certificate will be awarded."),
     );
   }
 
@@ -751,15 +751,20 @@ function certificate_certificate_map($node, $user, $map_type, $options) {
     }
   }
 
-  if ($map_type == 'content_profile') {
-    $content_profile = content_profile_load('profile', $user->uid);
+  if ($map_type == 'profile') {
+    $profiles = profile2_load_by_user($user);
+    $profiles['user'] = entity_load_single('user', $user->uid);
     $groupings = variable_get('certificate_field_grouping', array());
     foreach ($options as $key) {
       if (!empty($groupings[$key])) {
         foreach ($groupings[$key] as $field_name => $accepted_values) {
-          foreach ($content_profile->$field_name as $item) {
-            if (in_array($item['value'], $accepted_values)) {
-              return $key;
+          foreach ($profiles as $profile) {
+            if (!empty($profile->{$field_name}[LANGUAGE_NONE])) {
+              foreach ($profile->{$field_name}[LANGUAGE_NONE] as $item) {
+                if (in_array($item['value'], $accepted_values)) {
+                  return $key;
+                }
+              }
             }
           }
         }
