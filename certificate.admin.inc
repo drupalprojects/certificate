@@ -106,9 +106,7 @@ function certificate_alter_node_form(&$form, &$form_state) {
     $form['certificate'] = array(
       '#type' => 'fieldset',
       '#title' => t('Certificate settings'),
-      '#weight' => 100,
       '#tree' => TRUE,
-      '#group' => 'additional_settings',
       '#description' => t('Set up the selection criteria for awarding certificates.'),
     );
 
