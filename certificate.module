@@ -706,24 +706,24 @@ function certificate_certificate_map_options() {
       }
     }
     $options['rules'] = array(
-      'title' => 'Rules',
+      'title' => t('Rules'),
       'options' => $rules,
-      'description' => 'When a rule or ruleset ends with "Award certificate", the selected certificate will be awarded.',
+      'description' => t('When a rule or ruleset ends with "Award certificate", the selected certificate will be awarded.'),
     );
   }
 
-  if (module_exists('content_profile')) {
+  if (module_exists('profile2')) {
     $fieldgroups = variable_get('certificate_field_groups', array());
 
-    $options['content_profile'] = array(
-      'title' => "Content profile",
+    $options['profile2'] = array(
+      'title' => t('Profile2'),
       'options' => $fieldgroups,
       'description' => t('If a user matches a value in a field group, the selected certificate will be awarded.'),
     );
   }
 
   $options['manual'] = array(
-    'title' => 'Manual',
+    'title' => t('Manual'),
     'description' => t('Select a single certificate to award to the user.'),
     'options' => array('manual' => 'Manual'),
   );
