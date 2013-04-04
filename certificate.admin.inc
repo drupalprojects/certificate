@@ -288,13 +288,7 @@ function certificate_field_grouping_form($form, &$form_state) {
     );
 
 
-    $types = content_types();
-    foreach ($types as $key => $type) {
-      if (variable_get('content_profile_use_' . $key, 0)) {
-        $profile_types[] = $key;
-      }
-    }
-    $info = _content_type_info();
+    $types = profile2_get_types();
 
     $form['map']['#tree'] = TRUE;
     // Create multiselect box for each field key.
@@ -306,22 +300,22 @@ function certificate_field_grouping_form($form, &$form_state) {
         '#collapsible' => TRUE,
         '#collapsed' => TRUE,
       );
-      foreach ($info['content types'] as $ckey => $type) {
-        if (in_array($ckey, $profile_types)) {
-          foreach ($type['fields'] as $field_key => $field) {
-            $options = optionwidgets_options($field, FALSE);
-            if (!empty($options)) {
-              $form['map'][$key][$field_key] = array(
-                '#title' => check_plain($field['widget']['label']),
-                '#type' => 'select',
-                '#multiple' => TRUE,
-                '#options' => $options,
-                // This is a trick to set the default value to ' ', which doesn't
-                // match anything. This was accidentally causing 'None' to
-                // actually be selected as a mapping.
-                '#default_value' => isset($fieldgroups[$key][$field_key]) ? $fieldgroups[$key][$field_key] : array(),
-              );
-            }
+      $types = field_info_instances('profile2');
+      foreach ($types as $bundle_name => $fields) {
+        foreach ($fields as $field) {
+          $field_info = field_info_field($field['field_name']);
+          $options = list_allowed_values($field_info);
+          if (!empty($options)) {
+            $form['map'][$key][$field['field_name']] = array(
+              '#title' => check_plain($field['label']),
+              '#type' => 'select',
+              '#multiple' => TRUE,
+              '#options' => $options,
+              // This is a trick to set the default value to ' ', which doesn't
+              // match anything. This was accidentally causing 'None' to
+              // actually be selected as a mapping.
+              '#default_value' => isset($fieldgroups[$key][$field['field_name']]) ? $fieldgroups[$key][$field['field_name']] : array(),
+            );
           }
         }
       }
