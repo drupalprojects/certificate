@@ -323,16 +323,12 @@ function certificate_field_attach_form($entity_type, $entity, &$form, &$form_sta
     certificate_alter_node_form($form, $form_state);
   }
 
-  if ($entity_type == 'certificate') {
+  if ($entity_type == 'node' && $entity->type == 'certificate') {
     if (module_exists('token')) {
       // Embed token help.
-      // TODO Please change this theme call to use an associative array for the $variables parameter.
       $form['certificate_tokens'] = array(
         '#title' => 'Certificate tokens',
-        '#type' => 'fieldset',
-        '#collapsible' => TRUE,
-        '#collapsed' => FALSE,
-        '#value' => theme('token_tree', array('global', 'node', 'user', 'certificate'), FALSE),
+        '#markup' => theme('token_tree', array('token_types' => array('global', 'node', 'user', 'certificate'))),
       );
     }
   }
