@@ -425,7 +425,7 @@ function certificate_node_load($nodes, $types) {
 function certificate_node_view($node, $view_mode, $langcode) {
   if (certificate_can_access_certificate($node)) {
     // Add a download certificate link to the node content.
-    $node->content['certificate']['#value'] = '<span class="certificate-link">' . l(t('Download certificate'), "node/{$node->nid}/certificate") . '</span>';
+    $node->content['certificate']['#markup'] = '<span class="certificate-link">' . l(t('Download certificate'), "node/{$node->nid}/certificate") . '</span>';
   }
 }
 
