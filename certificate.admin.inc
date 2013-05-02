@@ -66,7 +66,7 @@ function certificate_type_mapping_form($form_state, $node = NULL) {
     $field_options_array = certificate_get_selected_type_options();
     if (arg(0) == 'node' && !count($field_options_array)) {
       $form['#type'] = 'markup';
-      $form['#value'] = "<div>" . t("Please !link before using certificates.", array('!link' => l('set up field mappings', 'admin/structure/certificates/mapping'))) . "</div>";
+      $form['#markup'] = "<div>" . t("Please !link before using certificates.", array('!link' => l('set up field mappings', 'admin/structure/certificates/mapping'))) . "</div>";
     }
 
     // Generate form elements based on selected field's allowed values.
