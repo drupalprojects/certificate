@@ -144,7 +144,13 @@ function certificate_uninstall() {
 function certificate_requirements($phase) {
   if ($phase == 'runtime') {
     if (variable_get('print_pdf_pdf_tool', '') == '') {
-      drupal_set_message(t('Certificates will not display before selecting a PDF generation tool in !link.', array('!link' => l('Printer, e-mail and PDF versions', 'admin/config/print/pdf'))));
+      return array(
+        'certificate_pdf_tool' => array(
+          'title' => 'Certificate PDF generation tool must be selected',
+          'description' => t('Certificates will not display before selecting a PDF generation tool in !link.', array('!link' => l('Printer, e-mail and PDF versions', 'admin/config/user-interface/print/pdf'))),
+          'severity' => REQUIREMENT_ERROR,
+        ),
+      );
     }
   }
 }
