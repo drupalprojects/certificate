@@ -161,7 +161,8 @@ function theme_certificate_certificate($variables) {
     ),
   );
 
-  $body = $template->body[LANGUAGE_NONE][0]['value'];
+  $field_items = field_get_items('node', $template, 'body');
+  $body = $field_items[0]['value'];
 
   // Invoke hook_certificate_body_alter() to allow all modules to alter the template body.
   drupal_alter('certificate_body', $body, $account, $node);
