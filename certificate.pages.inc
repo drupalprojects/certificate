@@ -174,7 +174,8 @@ function theme_certificate_certificate($variables) {
     $body = token_replace($body, $types);
   }
 
-  $body = check_markup($body, $template->body[LANGUAGE_NONE][0]['format']);
+  $format = $field_items[0]['format'];
+  $body = check_markup($body, $format);
 
   return $body;
 }
