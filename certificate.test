@@ -65,12 +65,40 @@ class CertificateTestCase extends DrupalWebTestCase {
       ),
     ));
 
-    certificate_course_node_template_settings($activity_node->nid);
-
     $this->drupalGet("node/{$activity_node->nid}/certificate", array('query' => array('certificate_ok' => 1)));
     $this->assertNoResponse(403, 'Did not get access denied.');
     $this->assertNoText('Custom access denied message.', 'Did not find module provided access denied message on certificate page.');
     $this->assertNoText('Sorry, there is no certificate available.', 'User received certificate.');
+  }
+
+  /**
+   * Test certicificate templating and tokens.
+   */
+  function testCertificateTemplates() {
+    $account = $this->drupalCreateUser(array('administer certificates'));
+
+    $node = $this->drupalCreateNode(array(
+      'title' => 'My test certifiable type',
+    ));
+
+    $certificate = $this->drupalCreateNode(array(
+      'type' => 'certificate',
+      'body' => array(LANGUAGE_NONE => array(array('value' => '[node:title][user:name]'))),
+    ));
+
+    $firstletter = $account->name[0];
+
+    // Map the first letter of the user's name to the certificate.
+    certificate_update_node_mappings($node->nid, array(
+      'firstletter' => array(
+        $firstletter => $certificate->nid,
+      ),
+    ));
+
+    $this->drupalLogin($account);
+    $this->drupalGet("node/$node->nid/certificate?preview");
+    $this->assertText('My test certifiable type', "Saw node title.");
+    $this->assertText($account->name, "Saw user name.");
   }
 
 }
