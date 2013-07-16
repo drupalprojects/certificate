@@ -1,4 +1,4 @@
 name = Certificate tests
 description = Tests for the Certificate module
 dependencies[] = certificate
-
+hidden = TRUE
