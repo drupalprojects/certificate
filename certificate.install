@@ -168,8 +168,7 @@ function certificate_update_6101() {
     'description' => 'The mapper to use.',
   ));
 
-  // TODO update_sql has been removed. Use the database API for any schema or data changes.
-  $ret[] = array() /* update_sql("update {certificate_node} set mapper = 'content_profile'") */;
+  db_query("UPDATE {certificate_node} SET mapper = 'content_profile'");
 
   // hook_update_N() no longer returns a $ret array. Instead, return
   // nothing or a translated string indicating the update ran successfully.
