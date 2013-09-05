@@ -136,8 +136,8 @@ function certificate_mapping_form(&$form, &$form_state) {
   $mappings = module_invoke_all('certificate_map_options');
 
   $options = array(
-    '-1' => '- no certificate -',
-    '' => '- global mapping -',
+    '-1' => t('- prevent certificate -'),
+    '' => t('- no action -'),
   );
   foreach (certificate_certificate_load_all() as $cert) {
     $options[$cert['nid']] = $cert['title'];
