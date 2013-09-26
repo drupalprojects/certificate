@@ -166,6 +166,7 @@ function certificate_update_6101() {
     'length' => 255,
     'not null' => TRUE,
     'description' => 'The mapper to use.',
+    'default' => '',
   ));
 
   db_query("UPDATE {certificate_node} SET mapper = 'content_profile'");
