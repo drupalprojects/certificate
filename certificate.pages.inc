@@ -155,10 +155,6 @@ function theme_certificate_certificate($variables) {
     'global' => NULL,
     'node' => $node,
     'user' => $account,
-    'certificate' => array(
-      'node' => $node,
-      'user' => $account,
-    ),
   );
 
   $field_items = field_get_items('node', $template, 'body');
