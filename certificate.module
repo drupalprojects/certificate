@@ -63,7 +63,7 @@ function certificate_form(&$node, $form_state) {
       'landscape' => t('Landscape'),
     ),
     '#required' => TRUE,
-    '#description' => 'The orientation of the generated certificate.',
+    '#description' => t('The orientation of the generated certificate.'),
   );
 
   $form['options']['status']['#default_value'] = 0;
