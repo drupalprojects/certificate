@@ -748,7 +748,7 @@ function certificate_certificate_map($node, $user, $map_type, $options) {
   }
 
   if ($map_type == 'profile') {
-    $profiles = profile2_load_by_user($user);
+    $profiles = module_exists('profile2') ? profile2_load_by_user($user) : array();
     $profiles['user'] = entity_load_single('user', $user->uid);
     $groupings = variable_get('certificate_field_grouping', array());
     foreach ($options as $key) {
