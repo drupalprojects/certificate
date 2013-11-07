@@ -9,7 +9,11 @@ function certificate_test_certificate_map_options() {
     $chars[$char] = $char;
   }
   return array(
-    'firstletter' => $chars,
+    'firstletter' => array(
+      'title' => 'Username first letter',
+      'description' => "Map by the first letter of the user's name",
+      'options' => $chars,
+    ),
   );
 }
 
