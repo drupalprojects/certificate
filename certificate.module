@@ -27,27 +27,6 @@ function certificate_node_info() {
 }
 
 /**
- * Implements hook_node_access().
- */
-function certificate_node_access($node, $op, $account) {
-  if ($op == 'create') {
-    return user_access('create certificate content', $account);
-  }
-
-  if ($op == 'update') {
-    if (user_access('edit any certificate content', $account) || (user_access('edit own certificate content', $account) && ($account->uid == $node->uid))) {
-      return TRUE;
-    }
-  }
-
-  if ($op == 'delete') {
-    if (user_access('delete any certificate content', $account) || (user_access('delete own certificate content', $account) && ($account->uid == $node->uid))) {
-      return TRUE;
-    }
-  }
-}
-
-/**
  * Certificate node form.
  */
 function certificate_form(&$node, $form_state) {
@@ -201,26 +180,6 @@ function certificate_permission() {
     'administer certificates' => array(
       'title' => t('administer certificates'),
       'description' => t('TODO Add a description for \'administer certificates\''),
-    ),
-    'create certificate content' => array(
-      'title' => t('create certificate content'),
-      'description' => t('TODO Add a description for \'create certificate content\''),
-    ),
-    'delete own certificate content' => array(
-      'title' => t('delete own certificate content'),
-      'description' => t('TODO Add a description for \'delete own certificate content\''),
-    ),
-    'delete any certificate content' => array(
-      'title' => t('delete any certificate content'),
-      'description' => t('TODO Add a description for \'delete any certificate content\''),
-    ),
-    'edit own certificate content' => array(
-      'title' => t('edit own certificate content'),
-      'description' => t('TODO Add a description for \'edit own certificate content\''),
-    ),
-    'edit any certificate content' => array(
-      'title' => t('edit any certificate content'),
-      'description' => t('TODO Add a description for \'edit any certificate content\''),
     ),
     'view all user certificates' => array(
       'title' => t('view all user certificates'),
