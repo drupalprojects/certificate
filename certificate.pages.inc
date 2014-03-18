@@ -11,23 +11,19 @@
 function certificate_node_certificate($node) {
   global $user;
 
-  if ($user->uid) {
-    $account = $user;
-  }
-
-  $perm = certificate_can_access_certificate($node, $user);
-
-  if ($perm != 1) {
-    //$perm is a string! show error.
-    return $perm;
-  }
-
   $admin = user_access('administer certificates');
   $view_all = user_access('view all user certificates');
 
   // Use account of a different user if allowed.
   if (($admin || $view_all) && arg(3) > 0) {
     $account = user_load(arg(3));
+  }
+
+  $perm = certificate_can_access_certificate($node, $account);
+
+  if ($perm != 1) {
+    //$perm is a string! show error.
+    return $perm;
   }
 
   return certificate_single($account, $node);
