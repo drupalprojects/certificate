@@ -18,6 +18,9 @@ function certificate_node_certificate($node) {
   if (($admin || $view_all) && arg(3) > 0) {
     $account = user_load(arg(3));
   }
+  else {
+    $account = $user;
+  }
 
   $perm = certificate_can_access_certificate($node, $account);
 

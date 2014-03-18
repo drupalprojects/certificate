@@ -571,6 +571,14 @@ function certificate_can_access_certificate($node, $account = NULL, $flush = FAL
   $found_true = NULL;
   $found_false = NULL;
 
+  $admin = user_access('administer certificates');
+  $view_all = user_access('view all user certificates');
+
+  // Use account of a different user if allowed.
+  if (($admin || $view_all) && arg(3) > 0) {
+    $account = user_load(arg(3));
+  }
+
   if (!$account) {
     global $user;
     $account = $user;
