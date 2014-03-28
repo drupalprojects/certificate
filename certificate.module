@@ -269,7 +269,18 @@ function certificate_form_alter(&$form, &$form_state, $form_id) {
       '#description' => t('Make this content type certificate-enabled. Certificate mapping selections will show on the node form.'),
       '#default_value' => variable_get("certificate_certifiable_{$form['#node_type']->type}", 0),
     );
+
+    $form['#after_build'][] = 'certificate_warn_course_content';
   }
+}
+
+/**
+ * Modify the node type form to add a warning about using a Certificate node as
+ * a course content object.
+ */
+function certificate_warn_course_content(&$form, &$form_state) {
+  $form['course']['course_content_use']['#description'] = '<span class="error">This is probably not what you want! Do not use a Certificate as a course content object.<br/>Use the "Course certificate" module which provides a "Certificate" course object.</span>';
+  return $form;
 }
 
 /**
