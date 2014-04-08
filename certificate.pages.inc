@@ -180,6 +180,7 @@ function theme_certificate_certificate($variables) {
  */
 function certificate_print_pdf_wrapper($filename, $html, $orientation) {
   module_load_include('pages.inc', 'print_pdf', 'print_pdf');
+  module_load_include('inc', 'print', 'includes/print');
 
   // Rewrite image URLs using Print.
   $pattern = '!<(img\s[^>]*?)>!is';
