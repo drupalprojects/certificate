@@ -4,10 +4,8 @@
  * Implements certificate_map_options().
  */
 function certificate_test_certificate_map_options() {
-  for ($i = 65; $i <= 90; $i++) {
-    $char = chr($i);
-    $chars[$char] = $char;
-  }
+  $chars = drupal_map_assoc(array_merge(range('a', 'z'), range('A', 'Z')));
+
   return array(
     'firstletter' => array(
       'title' => 'Username first letter',

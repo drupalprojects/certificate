@@ -38,7 +38,6 @@ function certificate_node_certificate($node) {
  * Check to see if user already has a certificate for a course. If so, serve it from the DB. If not, generate one and save it to the DB.
  */
 function certificate_single($account, $node) {
-  global $user;
   $output = '';
 
   // Preview.
@@ -50,7 +49,8 @@ function certificate_single($account, $node) {
     $output = $snapshot['snapshot'];
   }
   else {
-    $hooks = module_invoke_all('certificate_map_options');
+    $map_options = module_invoke_all('certificate_map_options');
+    drupal_alter('certificate_map_options', $map_options);
     $sql = "SELECT * FROM {certificate_node} WHERE nid = 0 or nid = :nid ORDER BY nid ASC";
     $result = db_query($sql, array(':nid' => $node->nid));
     $mapping = array();
@@ -58,15 +58,59 @@ function certificate_single($account, $node) {
       $mapping[$row->mapper][$row->type] = $row->template;
     }
 
-    foreach (array_keys($hooks) as $map_type) {
+    $template_ids = array();
+    foreach (array_keys($map_options) as $map_type) {
       if (!empty($mapping[$map_type])) {
-        $matches = module_invoke_all('certificate_map', $node, $user, $map_type, array_keys(array_filter((array) $mapping[$map_type])), array());
+        $matches = module_invoke_all('certificate_map', $node, $account, $map_type, array_keys(array_filter((array) $mapping[$map_type])), array());
+        drupal_alter('certificate_map', $matches, $node, $account, $map_type, array_keys(array_filter((array) $mapping[$map_type])), array());
         if (count($matches)) {
-          $template_id = $mapping[$map_type][$matches[0]]; // First one for now.
+          foreach ($matches as $match_key) {
+            $template_ids[$mapping[$map_type][$match_key]] = $map_options[$map_type]['options'][$match_key];
+          }
         }
       }
     }
 
+    // Alter the list of certificates the user is eligible to choose.
+    drupal_alter('certificate_template_ids', $template_ids, $node, $account);
+
+    if (count($template_ids) > 1) {
+      if (is_numeric(arg(4))) {
+        // User requested certificate.
+        if (isset($template_ids[arg(4)])) {
+          // User is eligible for this certificate.
+          $template_id = arg(4);
+        }
+        else {
+          return t('Not eligible for certificate.');
+        }
+      }
+      else {
+        // More than one certificate. Display a selection page.
+        $page = array();
+        $page['header'] = array(
+          '#type' => 'item',
+          '#markup' => t('You are eligible for multiple certificates.'),
+        );
+        foreach ($template_ids as $template_id => $name) {
+          $rows[] = array(
+            t('@map_name', array('@map_name' => $name)),
+            l(t('Download'), "node/$node->nid/certificate/$account->uid/$template_id"),
+          );
+        }
+        $page['certificates'] = array(
+          '#type' => 'item',
+          '#theme' => 'table',
+          '#rows' => $rows,
+        );
+        return $page;
+      }
+    }
+    else {
+      $template_id = key($template_ids);
+    }
+
+    // Alter the final certificate template to load.
     drupal_alter('certificate_template_id', $template_id, $node, $account);
 
     $template = node_load($template_id);
@@ -96,7 +140,7 @@ function certificate_single($account, $node) {
 
   $print_pdf_pdf_tool = variable_get('print_pdf_pdf_tool', '');
   if ($print_pdf_pdf_tool == '') {
-    if ($user->uid == 1) {
+    if ($account->uid == 1) {
       drupal_set_message(t('Certificate cannot be displayed because you have not selected a PDF generation tool in !link.', array('!link' => l('Printer, e-mail and PDF versions', 'admin/config/user-interface/print/pdf'))) . '.', 'error');
     }
     else {
