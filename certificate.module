@@ -270,7 +270,9 @@ function certificate_form_alter(&$form, &$form_state, $form_id) {
       '#default_value' => variable_get("certificate_certifiable_{$form['#node_type']->type}", 0),
     );
 
-    $form['#after_build'][] = 'certificate_warn_course_content';
+    if ($form['#node_type']->type == 'certificate') {
+      $form['#after_build'][] = 'certificate_warn_course_content';
+    }
   }
 }
 
