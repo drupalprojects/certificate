@@ -43,79 +43,78 @@ function certificate_single($account, $node) {
   // Preview.
   $preview = isset($_GET['preview']) && user_access('administer certificates');
 
-  // See if user already has a snapshotted certificate for a course. If so, grab
-  // from the DB. If not, generate a new one.
-  if (variable_get('certificate_snapshots', 0) && $snapshot = certificate_snapshot_load($account, $node)) {
-    $output = $snapshot['snapshot'];
+  $map_options = module_invoke_all('certificate_map_options');
+  drupal_alter('certificate_map_options', $map_options);
+  $sql = "SELECT * FROM {certificate_node} WHERE nid = 0 or nid = :nid ORDER BY nid ASC";
+  $result = db_query($sql, array(':nid' => $node->nid));
+  $mapping = array();
+  while ($row = $result->fetch()) {
+    $mapping[$row->mapper][$row->type] = $row->template;
   }
-  else {
-    $map_options = module_invoke_all('certificate_map_options');
-    drupal_alter('certificate_map_options', $map_options);
-    $sql = "SELECT * FROM {certificate_node} WHERE nid = 0 or nid = :nid ORDER BY nid ASC";
-    $result = db_query($sql, array(':nid' => $node->nid));
-    $mapping = array();
-    while ($row = $result->fetch()) {
-      $mapping[$row->mapper][$row->type] = $row->template;
-    }
 
-    $template_ids = array();
-    foreach (array_keys($map_options) as $map_type) {
-      if (!empty($mapping[$map_type])) {
-        $matches = module_invoke_all('certificate_map', $node, $account, $map_type, array_keys(array_filter((array) $mapping[$map_type])), array());
-        drupal_alter('certificate_map', $matches, $node, $account, $map_type, array_keys(array_filter((array) $mapping[$map_type])), array());
-        if (count($matches)) {
-          foreach ($matches as $match_key) {
-            $template_ids[$mapping[$map_type][$match_key]] = $map_options[$map_type]['options'][$match_key];
-          }
+  $template_ids = array();
+  foreach (array_keys($map_options) as $map_type) {
+    if (!empty($mapping[$map_type])) {
+      $matches = module_invoke_all('certificate_map', $node, $account, $map_type, array_keys(array_filter((array) $mapping[$map_type])), array());
+      drupal_alter('certificate_map', $matches, $node, $account, $map_type, array_keys(array_filter((array) $mapping[$map_type])), array());
+      if (count($matches)) {
+        foreach ($matches as $match_key) {
+          $template_ids[$mapping[$map_type][$match_key]] = $map_options[$map_type]['options'][$match_key];
         }
       }
     }
+  }
 
-    // Alter the list of certificates the user is eligible to choose.
-    drupal_alter('certificate_template_ids', $template_ids, $node, $account);
+  // Alter the list of certificates the user is eligible to choose.
+  drupal_alter('certificate_template_ids', $template_ids, $node, $account);
 
-    if (count($template_ids) > 1) {
-      if (is_numeric(arg(4))) {
-        // User requested certificate.
-        if (isset($template_ids[arg(4)])) {
-          // User is eligible for this certificate.
-          $template_id = arg(4);
-        }
-        else {
-          return t('Not eligible for certificate.');
-        }
+  if (count($template_ids) > 1) {
+    if (is_numeric(arg(4))) {
+      // User requested certificate.
+      if (isset($template_ids[arg(4)])) {
+        // User is eligible for this certificate.
+        $template_id = arg(4);
       }
       else {
-        // More than one certificate. Display a selection page.
-        $page = array();
-        $page['header'] = array(
-          '#type' => 'item',
-          '#markup' => t('You are eligible for multiple certificates.'),
-        );
-        foreach ($template_ids as $template_id => $name) {
-          $rows[] = array(
-            t('@map_name', array('@map_name' => $name)),
-            l(t('Download'), "node/$node->nid/certificate/$account->uid/$template_id"),
-          );
-        }
-        $page['certificates'] = array(
-          '#type' => 'item',
-          '#theme' => 'table',
-          '#rows' => $rows,
-        );
-        return $page;
+        return t('Not eligible for certificate.');
       }
     }
     else {
-      $template_id = key($template_ids);
+      // More than one certificate. Display a selection page.
+      $page = array();
+      $page['header'] = array(
+        '#type' => 'item',
+        '#markup' => t('You are eligible for multiple certificates.'),
+      );
+      foreach ($template_ids as $template_id => $name) {
+        $rows[] = array(
+          t('@map_name', array('@map_name' => $name)),
+          l(t('Download'), "node/$node->nid/certificate/$account->uid/$template_id"),
+        );
+      }
+      $page['certificates'] = array(
+        '#type' => 'item',
+        '#theme' => 'table',
+        '#rows' => $rows,
+      );
+      return $page;
     }
+  }
+  else {
+    $template_id = key($template_ids);
+  }
 
-    // Alter the final certificate template to load.
-    drupal_alter('certificate_template_id', $template_id, $node, $account);
+  // Alter the final certificate template to load.
+  drupal_alter('certificate_template_id', $template_id, $node, $account);
 
-    $template = node_load($template_id);
-
-    if ($template && $node) {
+  $template = node_load($template_id);
+  if ($template && $node) {
+    // See if user already has a snapshotted certificate for a course. If so, grab
+    // from the DB. If not, generate a new one.
+    if (variable_get('certificate_snapshots', 0) && $snapshot = certificate_snapshot_load($account, $node)) {
+      $output = $snapshot['snapshot'];
+    }
+    else {
       // Prepend output with UTF 8 meta tag.
       // See http://code.google.com/p/wkhtmltopdf/issues/detail?id=556
       // Print module gets around this because the meta tag in Drupal is already
@@ -133,9 +132,9 @@ function certificate_single($account, $node) {
         certificate_snapshot_save($snapshot);
       }
     }
-    else {
-      return t('Sorry, there is no certificate available.');
-    }
+  }
+  else {
+    return t('Sorry, there is no certificate available.');
   }
 
   $print_pdf_pdf_tool = variable_get('print_pdf_pdf_tool', '');
