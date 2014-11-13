@@ -87,8 +87,9 @@ function certificate_single($account, $node) {
         '#markup' => t('You are eligible for multiple certificates.'),
       );
       foreach ($template_ids as $template_id => $name) {
+        $name = filter_xss_admin(t($name));
         $rows[] = array(
-          t('@map_name', array('@map_name' => $name)),
+          $name,
           l(t('Download'), "node/$node->nid/certificate/$account->uid/$template_id"),
         );
       }
