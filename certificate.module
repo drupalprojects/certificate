@@ -173,17 +173,17 @@ function certificate_menu() {
  */
 function certificate_permission() {
   return array(
-    'access all certificates' => array(
-      'title' => t('access all certificates'),
-      'description' => t('TODO Add a description for \'access all certificates\''),
-    ),
     'administer certificates' => array(
       'title' => t('administer certificates'),
-      'description' => t('TODO Add a description for \'administer certificates\''),
+      'description' => t('Configure global certificate settings and mappings.'),
+    ),
+    'assign certificates' => array(
+      'title' => t('assign certificates'),
+      'description' => t('Add or remove certificate mappings on certifiable objects.'),
     ),
     'view all user certificates' => array(
       'title' => t('view all user certificates'),
-      'description' => t('TODO Add a description for \'view all user certificates\''),
+      'description' => t('View any certificate earned by another user.'),
     ),
   );
 }

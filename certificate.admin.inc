@@ -102,7 +102,7 @@ function certificate_alter_node_form(&$form, &$form_state) {
 
   // Add template-mapping form.
   // Note, make sure to set #tree to TRUE.
-  if (user_access('administer certificates')) {
+  if (user_access('administer certificates') || user_access('assign certificates')) {
     $form['certificate'] = array(
       '#type' => 'fieldset',
       '#title' => t('Certificate settings'),
