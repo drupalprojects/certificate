@@ -210,7 +210,16 @@ function theme_certificate_certificate($variables) {
     if (module_exists('purl')) {
       purl_disable(TRUE);
     }
-    $body = token_replace($body, $types);
+
+    // Clear out un-replaced tokens and use a custom callback, so that we can
+    // have HTML tokens render in the PDF. We probably do not need to sanitize
+    // here as the output is PDF, but it doesn't hurt.
+    $options = array();
+    $options['clear'] = TRUE;
+    $options['sanitize'] = FALSE;
+    $options['callback'] = '_certificate_sanitize_tokens';
+
+    $body = token_replace($body, $types, $options);
   }
 
   $format = $field_items[0]['format'];
@@ -248,4 +257,13 @@ function certificate_print_pdf_wrapper($filename, $html, $orientation) {
   }
 
   exit;
+}
+
+/**
+ * Call filter_xss on each of the items in the replacements array.
+ */
+function _certificate_sanitize_tokens(&$replacements) {
+  foreach ($replacements as $token => &$replacement) {
+    $replacement = filter_xss($replacement);
+  }
 }
