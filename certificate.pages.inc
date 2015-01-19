@@ -264,6 +264,6 @@ function certificate_print_pdf_wrapper($filename, $html, $orientation) {
  */
 function _certificate_sanitize_tokens(&$replacements) {
   foreach ($replacements as $token => &$replacement) {
-    $replacement = filter_xss($replacement);
+    $replacement = filter_xss_admin($replacement);
   }
 }
