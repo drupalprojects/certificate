@@ -222,7 +222,7 @@ function certificate_theme() {
  *   An array of all certificates, keyed by node (certificate) ID.
  */
 function certificate_certificate_load_all() {
-  $result = db_query("SELECT *, nid AS cid FROM {node} n WHERE type = :type", array(':type' => 'certificate'));
+  $result = db_query("SELECT *, nid AS cid FROM {node} n WHERE type = :type ORDER BY title", array(':type' => 'certificate'));
 
   $certificates = array();
   while ($certificate = $result->fetch(PDO::FETCH_ASSOC)) {

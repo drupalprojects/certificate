@@ -140,7 +140,7 @@ function certificate_mapping_form(&$form, &$form_state) {
     '' => t('- no action -'),
   );
   foreach (certificate_certificate_load_all() as $cert) {
-    $options[$cert['nid']] = $cert['title'];
+    $options[$cert['nid']] = check_plain($cert['title']);
   }
 
   foreach ($mappings as $map_type => $map) {
@@ -426,18 +426,17 @@ function certificate_field_grouping_delete_form($form, $key) {
 function certificate_templates_list() {
   $certificates = array();
   $l = l('Create new certificate', 'node/add/certificate', array('query' => drupal_get_destination()));
-  $sql = "select * from {node} where type='certificate'";
+  $sql = "SELECT * FROM {node} WHERE type = 'certificate' ORDER BY title";
   $result = db_query($sql);
   while ($row = $result->fetch(PDO::FETCH_ASSOC)) {
     $destination = drupal_get_destination();
     $certificates[] = array(
-      'title' => $row['title'],
+      'title' => filter_xss_admin($row['title']),
       'edit' => l(t('edit'), "node/{$row['nid']}/edit", array('query' => $destination, 'attributes' => array('class' => 'edit-link'))),
       'delete' => l(t('delete'), "node/{$row['nid']}/delete", array('query' => $destination, 'attributes' => array('class' => 'delete-link'))),
       'preview' => l(t('PDF'), "admin/structure/certificates/templates/preview/" . $row['nid'], array('attributes' => array('class' => 'preview-link'))),
     );
   }
-
   return $l . theme_table(array('header' => array(t('Title'), t('Edit'), t('Delete'), t('Preview')), 'rows' => $certificates, 'attributes' => array(), 'caption' => '', 'colgroups' => array(), 'sticky' => FALSE, 'empty' => ''));
 }
 
