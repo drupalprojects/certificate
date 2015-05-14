@@ -157,7 +157,7 @@ function certificate_mapping_form(&$form, &$form_state) {
       foreach ($map['options'] as $key => $title) {
         $form['certificate']['map'][$map_type][$key] = array(
           '#type' => 'select',
-          '#title' => check_plain($title),
+          '#title' => filter_xss($title),
           '#options' => $options,
           '#default_value' => isset($stored[$map_type][$key]) ? $stored[$map_type][$key] : NULL,
         );
