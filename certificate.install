@@ -142,17 +142,19 @@ function certificate_uninstall() {
  * Implements hook_requirements().
  */
 function certificate_requirements($phase) {
+  $requirements = array();
+
   if ($phase == 'runtime') {
     if (variable_get('print_pdf_pdf_tool', '') == '') {
-      return array(
-        'certificate_pdf_tool' => array(
-          'title' => 'Certificate PDF generation tool must be selected',
-          'description' => t('Certificates will not display before selecting a PDF generation tool in !link.', array('!link' => l('Printer, e-mail and PDF versions', 'admin/config/user-interface/print/pdf'))),
-          'severity' => REQUIREMENT_ERROR,
-        ),
+      $requirements['certificate_pdf_tool'] = array(
+        'title' => t('Certificate PDF generation tool must be selected'),
+        'description' => t('Certificates will not display before selecting a PDF generation tool in !link.', array('!link' => l('Printer, e-mail and PDF versions', 'admin/config/user-interface/print/pdf'))),
+        'severity' => REQUIREMENT_ERROR,
       );
     }
   }
+
+  return $requirements;
 }
 
 /**
