@@ -242,10 +242,10 @@ function certificate_print_pdf_wrapper($filename, $html, $orientation) {
   if (function_exists('_print_scan_libs')) {
     // Print 2.x
     $meta = array(
-      'url',
-      'name',
-      'title',
-      'node',
+      'url' => url(current_path(), array('absolute' => TRUE)),
+      'name' => '',
+      'title' => '',
+      'node' => NULL,
     );
     print_pdf_generate_html($html, $meta, $filename, NULL, $orientation);
   }
@@ -253,7 +253,11 @@ function certificate_print_pdf_wrapper($filename, $html, $orientation) {
     // Print 1.x
     global $conf;
     $conf['print_pdf_page_orientation'] = $orientation;
-    print_pdf_generate_html(array('node' => NULL), $html, $filename);
+    $print = array(
+      'url' => url(current_path(), array('absolute' => TRUE)),
+      'node' => NULL,
+    );
+    print_pdf_generate_html($print, $html, $filename);
   }
 
   exit;
