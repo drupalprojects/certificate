@@ -165,6 +165,15 @@ function certificate_menu() {
     'type' => MENU_LOCAL_TASK,
   );
 
+  $items['admin/structure/certificates/add'] = array(
+    'title' => 'Create new certificate',
+    'page callback' => 'drupal_goto',
+    'page arguments' => array('node/add/certificate', array('query' => array('destination' => 'admin/structure/certificates'))),
+    'access callback' => 'node_access',
+    'access arguments' => array('create', 'certificate'),
+    'type' => MENU_LOCAL_ACTION,
+  );
+
   return $items;
 }
 
