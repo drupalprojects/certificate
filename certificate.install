@@ -88,6 +88,13 @@ function certificate_schema() {
         'default' => 0,
         'description' => '{node}.nid of the node.',
       ),
+      'cid' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'unsigned' => TRUE,
+        'default' => 0,
+        'description' => 'Template ID used for generation.',
+      ),
       'date' => array(
         'type' => 'int',
         'not null' => FALSE,
@@ -205,4 +212,17 @@ function certificate_update_7001() {
     'description' => 'The certificate node ID to deliver on a match.',
   ));
   return t('Changed template field to allow signed integers.');
+}
+
+/**
+ * Add a cid column to the snapshots table.
+ */
+function certificate_update_7002() {
+  db_add_field('certificate_snapshots', 'cid', array(
+    'type' => 'int',
+    'not null' => TRUE,
+    'unsigned' => TRUE,
+    'default' => 0,
+    'description' => 'Template ID used for generation.',
+  ));
 }

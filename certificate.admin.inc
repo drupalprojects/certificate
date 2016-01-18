@@ -228,11 +228,6 @@ function certificate_field_grouping_form($form, &$form_state) {
 
     $groupsinfo = variable_get('certificate_field_groups', array());
     $fieldgroups = variable_get('certificate_field_grouping', array());
-    $form['certificate_add_new_group'] = array(
-      '#prefix' => '<div>',
-      '#suffix' => '</div>',
-      '#markup' => l('Add a new group?', 'admin/structure/certificates/mapping/groups/add'),
-    );
 
     $form['map']['#tree'] = TRUE;
     // Create multiselect box for each field key.
@@ -288,23 +283,28 @@ function certificate_field_grouping_form_submit(&$form, &$form_state) {
 }
 
 /**
- * @todo Please document this function.
- * @see http://drupal.org/node/1354
+ * Form to add a field grouping.
  */
 function certificate_field_grouping_add_form($form, &$form_state) {
   $form = array();
-
-  $form['fieldgroup_name'] = array(
-    '#title' => 'Machine name of field group',
-    '#type' => 'textfield',
-    '#required' => TRUE,
-  );
 
   $form['fieldgroup_title'] = array(
     '#title' => 'Title of field group',
     '#type' => 'textfield',
     '#required' => TRUE,
   );
+
+  $form['fieldgroup_name'] = array(
+    '#type' => 'machine_name',
+    '#title' => 'Machine name of field group',
+    '#required' => TRUE,
+    '#machine_name' => array(
+      'source' => array('fieldgroup_title'),
+      'label' => 'Machine name',
+      'exists' => 'certificate_field_grouping_machine_name_exists',
+    ),
+  );
+
 
   $form['submit'] = array(
     '#type' => 'submit',
@@ -317,13 +317,9 @@ function certificate_field_grouping_add_form($form, &$form_state) {
 /**
  * Validate the fieldgroup machine name.
  */
-function certificate_field_grouping_add_form_validate(&$form, &$form_state) {
-  $fieldgroup_name = $form_state['values']['fieldgroup_name'];
+function certificate_field_grouping_machine_name_exists($value) {
   $fieldgroups = variable_get('certificate_field_groups', array());
-
-  if (isset($fieldgroups[$fieldgroup_name])) {
-    form_set_error('fieldgroup_name', 'Duplicate, please choose another name.');
-  }
+  return isset($fieldgroups[$value]);
 }
 
 /**

@@ -112,7 +112,7 @@ function certificate_single($account, $node) {
   if ($template && $node) {
     // See if user already has a snapshotted certificate for a course. If so, grab
     // from the DB. If not, generate a new one.
-    if (variable_get('certificate_snapshots', 0) && $snapshot = certificate_snapshot_load($account, $node)) {
+    if (variable_get('certificate_snapshots', 0) && $snapshot = certificate_snapshot_load($account, $node, $template->nid)) {
       $output = $snapshot['snapshot'];
     }
     else {
@@ -126,10 +126,11 @@ function certificate_single($account, $node) {
       // Now save this generated certificate as a 'snapshot' in the database.
       $snapshot['uid'] = $account->uid;
       $snapshot['nid'] = $node->nid;
+      $snapshot['cid'] = $template->nid;
       $date = getdate();
       $snapshot['date'] = $date[0];
       $snapshot['snapshot'] = $output;
-      if (!$preview) {
+      if (!$preview && variable_get('certificate_snapshots', 0)) {
         certificate_snapshot_save($snapshot);
       }
     }

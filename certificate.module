@@ -107,7 +107,7 @@ function certificate_menu() {
     'page arguments' => array('certificate_field_grouping_add_form'),
     'access arguments' => array('administer certificates'),
     'file' => 'certificate.admin.inc',
-    'type' => MENU_LOCAL_TASK,
+    'type' => MENU_LOCAL_ACTION,
   );
 
   /*
@@ -454,13 +454,19 @@ function certificate_node_is_certifiable($node) {
  * Quick certificates snapshot check.
  *
  * @param $account
+ *   The account.
  * @param $node
+ *   The node.
+ * @param $cid
+ *   The certificate ID to check.
  *
  * @return
  *   A single certificate snapshot in array format, or FALSE if none matched the incoming ID.
  */
-function certificate_snapshot_load($account, $node) {
-  $result = db_query("SELECT * FROM {certificate_snapshots} WHERE uid = :uid AND nid = :nid", array(':uid' => $account->uid, ':nid' => $node->nid));
+function certificate_snapshot_load($account, $node, $cid) {
+  // Pull the certificate snapshot.
+  // Note that a pre-7002 snapshot, since we do not know which certificate was snapshotted, will return the existing snapshot.
+  $result = db_query("SELECT * FROM {certificate_snapshots} WHERE uid = :uid AND nid = :nid AND (cid = 0 OR cid = :cid)", array(':uid' => $account->uid, ':nid' => $node->nid, ':cid' => $cid));
   return $result->fetch(PDO::FETCH_ASSOC);
 }
 
@@ -733,9 +739,10 @@ function certificate_certificate_map($node, $user, $map_type, $options) {
       $_certificate_award = FALSE;
       rules_invoke_component($key, $node, $user);
       if ($_certificate_award) {
-        return $key;
+        $valid[] = $key;
       }
     }
+    return $valid;
   }
 
   if ($map_type == 'profile') {
@@ -749,7 +756,7 @@ function certificate_certificate_map($node, $user, $map_type, $options) {
             if (!empty($profile->{$field_name}[LANGUAGE_NONE])) {
               foreach ($profile->{$field_name}[LANGUAGE_NONE] as $item) {
                 if (in_array($item['value'], $accepted_values)) {
-                  return $key;
+                  $valid[] = $key;
                 }
               }
             }
@@ -757,6 +764,7 @@ function certificate_certificate_map($node, $user, $map_type, $options) {
         }
       }
     }
+    return $valid;
   }
 
   if ($map_type == 'manual') {
