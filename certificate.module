@@ -54,7 +54,7 @@ function certificate_form($form, &$form_state, $certificate = NULL) {
   $form['actions']['#type'] = 'actions';
   $form['actions']['submit'] = array(
     '#type' => 'submit',
-    '#value' => 'Save changes',
+    '#value' => t('Save'),
   );
   return $form;
 }
@@ -789,7 +789,7 @@ function certificate_entity_info() {
       'certificate' => array(
         'label' => 'Certificate',
         'admin' => array(
-          'path' => 'admin/structure/certificates/certificate',
+          'path' => 'admin/structure/certificates/manage',
           'access arguments' => array('administer certificates'),
         ),
       ),
