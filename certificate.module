@@ -9,6 +9,7 @@
  * Certificate node form.
  */
 function certificate_form($form, &$form_state, $certificate = NULL) {
+
   $form['title'] = array(
     '#type' => 'textfield',
     '#title' => t('Title'),
@@ -16,8 +17,8 @@ function certificate_form($form, &$form_state, $certificate = NULL) {
     '#required' => TRUE,
     '#maxlength' => 128,
     '#size' => 60,
-    '#weight' => -10,
   );
+
   $form['name'] = array(
     '#type' => 'machine_name',
     '#title' => t('Machine name'),
@@ -29,8 +30,8 @@ function certificate_form($form, &$form_state, $certificate = NULL) {
       'source' => array('title'),
       'exists' => 'certificate_load',
     ),
-    '#weight' => -5,
   );
+
   $form['orientation'] = array(
     '#type' => 'radios',
     '#title' => t('Orientation'),
@@ -41,19 +42,19 @@ function certificate_form($form, &$form_state, $certificate = NULL) {
     ),
     '#required' => TRUE,
     '#description' => t('The orientation of the generated certificate.'),
-    '#weight' => -1,
   );
+
   $form['certificate_tokens'] = array(
     '#title' => 'Certificate tokens',
     '#markup' => theme('token_tree', array('token_types' => array('global', 'node', 'user', 'certificate'))),
-    '#weight' => 90,
   );
+
   field_attach_form('certificate', $certificate, $form, $form_state);
+
   $form['actions']['#type'] = 'actions';
   $form['actions']['submit'] = array(
     '#type' => 'submit',
     '#value' => 'Save changes',
-    '#weight' => 99
   );
   return $form;
 }
@@ -223,9 +224,7 @@ function certificate_theme() {
  *   An array of all certificates, keyed by certificate ID.
  */
 function certificate_certificate_load_all() {
-  $certificates = entity_load('certificate');
-  drupal_alter('certificate_template_options', $certificates);
-  return $certificates;
+  return entity_load('certificate');
 }
 
 /**
@@ -290,14 +289,6 @@ function certificate_field_attach_form($entity_type, $entity, &$form, &$form_sta
     module_load_include('inc', 'certificate', 'certificate.admin');
     certificate_alter_node_form($form, $form_state);
   }
-}
-
-/**
- * Implements hook_form_FORM_ID_alter().
- */
-function certificate_form_certificate_node_form_alter(&$form, &$form_state) {
-  // No preview - we want users to see it in PDF for accuracy.
-  $form['buttons']['preview'] = NULL;
 }
 
 /**
@@ -410,11 +401,30 @@ function certificate_field_extra_fields() {
     }
   }
 
-  $extra['node']['certificate']['form']['certificate'] = array(
+  $extra['certificate']['certificate']['form']['title'] = array(
+    'label' => t('Certificate title'),
+    'description' => t('Certificate title'),
+    'weight' => 1,
+  );
+
+  $extra['certificate']['certificate']['form']['name'] = array(
+    'label' => t('Certificate machine name'),
+    'description' => t('Certificate machine name'),
+    'weight' => 2,
+  );
+
+  $extra['certificate']['certificate']['form']['orientation'] = array(
+    'label' => t('Certificate orientation'),
+    'description' => t('Certificate orientation'),
+    'weight' => 3,
+  );
+
+  $extra['certificate']['certificate']['form']['certificate'] = array(
     'label' => t('Certificate tokens'),
     'description' => t('Tokens to insert into the certificate'),
-    'weight' => 0,
+    'weight' => 4,
   );
+
 
   return $extra;
 }

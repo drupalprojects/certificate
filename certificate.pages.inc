@@ -205,28 +205,15 @@ function theme_certificate_certificate($variables) {
     'user' => $account,
   );
 
-  $field_items = field_get_items('certificate', $template, 'certificate_body');
-  $body = $field_items[0]['value'];
-
-  // Invoke hook_certificate_body_alter() to allow all modules to alter the template body.
-  drupal_alter('certificate_body', $body, $account, $node);
+  $view = entity_view('certificate', array($template));
+  $page = drupal_render($view);
 
   if (module_exists('purl')) {
     purl_disable(TRUE);
   }
 
-  // Clear out un-replaced tokens and use a custom callback, so that we can
-  // have HTML tokens render in the PDF. We probably do not need to sanitize
-  // here as the output is PDF, but it doesn't hurt.
-  $options = array();
-  $options['clear'] = TRUE;
-  $options['sanitize'] = FALSE;
-  $options['callback'] = '_certificate_sanitize_tokens';
-
-  $body = token_replace($body, $types, $options);
-
-  $format = $field_items[0]['format'];
-  $body = check_markup($body, $format);
+  // Token replace, clear out empty tokens.
+  $body = token_replace($page, $types, array('clear' => TRUE));
 
   return $body;
 }
@@ -264,13 +251,4 @@ function certificate_print_pdf_wrapper($filename, $html, $orientation) {
   }
 
   exit;
-}
-
-/**
- * Call filter_xss on each of the items in the replacements array.
- */
-function _certificate_sanitize_tokens(&$replacements) {
-  foreach ($replacements as $token => &$replacement) {
-    $replacement = filter_xss_admin($replacement);
-  }
 }
