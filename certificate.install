@@ -261,7 +261,7 @@ function certificate_install() {
       'entity_type' => 'certificate',
       'bundle' => 'certificate',
       'label' => 'Body',
-      'widget' => array('type' => 'text_textarea_with_summary'),
+      'widget' => array('type' => 'text_textarea_with_summary', 'weight' => 4),
       'settings' => array('display_summary' => TRUE),
       'display' => array(
         'default' => array(
@@ -273,7 +273,6 @@ function certificate_install() {
           'type' => 'text_summary_or_trimmed',
         ),
       ),
-      'weight' => 4,
     );
     field_create_instance($instance);
   }

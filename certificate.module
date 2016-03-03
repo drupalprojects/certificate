@@ -416,7 +416,7 @@ function certificate_field_extra_fields() {
     'weight' => 3,
   );
 
-  $extra['certificate']['certificate']['form']['certificate'] = array(
+  $extra['certificate']['certificate']['form']['certificate_tokens'] = array(
     'label' => t('Certificate tokens'),
     'description' => t('Tokens to insert into the certificate'),
     'weight' => 5,
