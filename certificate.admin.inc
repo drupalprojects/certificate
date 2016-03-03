@@ -138,7 +138,7 @@ function certificate_mapping_form(&$form, &$form_state) {
     '' => t('- no action -'),
   );
   foreach (certificate_certificate_load_all() as $cert) {
-    $options[$cert['nid']] = check_plain($cert['title']);
+    $options[$cert->cid] = entity_label('certificate', $cert);
   }
 
   foreach ($mappings as $map_type => $map) {
@@ -363,25 +363,6 @@ function certificate_field_grouping_delete_form($form, $key) {
   );
 
   return confirm_form($form, "Delete field group $key?", 'admin/structure/certificates/mapping/groups', 'This action cannot be undone. Access to matched certificates will be lost.', 'Delete', 'Cancel');
-}
-
-/**
- * List of certificates with links to add and edit.
- */
-function certificate_templates_list() {
-  $certificates = array();
-  $sql = "SELECT * FROM {node} WHERE type = 'certificate' ORDER BY title";
-  $result = db_query($sql);
-  while ($row = $result->fetch(PDO::FETCH_ASSOC)) {
-    $destination = drupal_get_destination();
-    $certificates[] = array(
-      'title' => filter_xss_admin($row['title']),
-      'edit' => l(t('edit'), "node/{$row['nid']}/edit", array('query' => $destination, 'attributes' => array('class' => 'edit-link'))),
-      'delete' => l(t('delete'), "node/{$row['nid']}/delete", array('query' => $destination, 'attributes' => array('class' => 'delete-link'))),
-      'preview' => l(t('PDF'), "admin/structure/certificates/templates/preview/" . $row['nid'], array('attributes' => array('class' => 'preview-link'))),
-    );
-  }
-  return theme('table', array('header' => array(t('Title'), t('Edit'), t('Delete'), t('Preview')), 'rows' => $certificates, 'empty' => t('No certificate templates have been added.')));
 }
 
 /**

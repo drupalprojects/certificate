@@ -111,11 +111,11 @@ function certificate_single($account, $node) {
   // Alter the final certificate template to load.
   drupal_alter('certificate_template_id', $template_id, $node, $account);
 
-  $template = node_load($template_id);
-  if ($template && $node) {
+  if ($template_id && $node) {
+    $template = certificate_load($template_id);
     // See if user already has a snapshotted certificate for a course. If so, grab
     // from the DB. If not, generate a new one.
-    if (variable_get('certificate_snapshots', 0) && $snapshot = certificate_snapshot_load($account, $node, $template->nid)) {
+    if (variable_get('certificate_snapshots', 0) && $snapshot = certificate_snapshot_load($account, $node, $template->cid)) {
       $output = $snapshot['snapshot'];
     }
     else {
@@ -129,7 +129,7 @@ function certificate_single($account, $node) {
       // Now save this generated certificate as a 'snapshot' in the database.
       $snapshot['uid'] = $account->uid;
       $snapshot['nid'] = $node->nid;
-      $snapshot['cid'] = $template->nid;
+      $snapshot['cid'] = $template->cid;
       $date = getdate();
       $snapshot['date'] = $date[0];
       $snapshot['snapshot'] = $output;
@@ -142,23 +142,23 @@ function certificate_single($account, $node) {
     return t('Sorry, there is no certificate available.');
   }
 
-  $print_pdf_pdf_tool = variable_get('print_pdf_pdf_tool', '');
-  if ($print_pdf_pdf_tool == '') {
-    if ($account->uid == 1) {
-      drupal_set_message(t('Certificate cannot be displayed because you have not selected a PDF generation tool in !link.', array('!link' => l('Printer, e-mail and PDF versions', 'admin/config/user-interface/print/pdf'))) . '.', 'error');
-    }
-    else {
-      drupal_set_message(t('PDF generation tool is not configured.'));
-    }
-    return ' ';
-  }
-
-  module_load_include('pages.inc', 'print_pdf', 'print_pdf');
-
   if ($preview) {
     print $output;
+    exit;
   }
   else {
+    $print_pdf_pdf_tool = variable_get('print_pdf_pdf_tool', '');
+    if ($print_pdf_pdf_tool == '') {
+      if ($account->uid == 1) {
+        drupal_set_message(t('Certificate cannot be displayed because you have not selected a PDF generation tool in !link.', array('!link' => l('Printer, e-mail and PDF versions', 'admin/config/user-interface/print/pdf'))) . '.', 'error');
+      }
+      else {
+        drupal_set_message(t('PDF generation tool is not configured.'));
+      }
+      return ' ';
+    }
+
+    module_load_include('pages.inc', 'print_pdf', 'print_pdf');
     certificate_print_pdf_wrapper($node->title . '.pdf', $output, isset($template) ? $template->certificate['orientation'] : variable_get('print_pdf_page_orientation', PRINT_PDF_PAGE_ORIENTATION_DEFAULT));
   }
 }
@@ -166,9 +166,9 @@ function certificate_single($account, $node) {
 /**
  * Preview certificate template as PDF.
  */
-function certificate_preview($template_id) {
+function certificate_preview($cid) {
   global $user;
-  $template = node_load($template_id);
+  $template = certificate_load($cid);
   if ($template) {
     $output = '<html><head><meta charset="utf-8"/></head><body>' . theme('certificate_certificate', array('node' => NULL, 'account' => $user, 'template' => $template)) . '</body></html>';
   }
@@ -179,7 +179,7 @@ function certificate_preview($template_id) {
     return '';
   }
 
-  certificate_print_pdf_wrapper($template->title . '.pdf', $output, $template->certificate['orientation']);
+  certificate_print_pdf_wrapper(entity_label('certificate', $template) . '.pdf', $output, $template->orientation);
 }
 
 /**
@@ -200,31 +200,30 @@ function theme_certificate_certificate($variables) {
   $template = $variables['template'];
   $types = array(
     'global' => NULL,
+    'certificate' => NULL,
     'node' => $node,
     'user' => $account,
   );
 
-  $field_items = field_get_items('node', $template, 'body');
+  $field_items = field_get_items('certificate', $template, 'certificate_body');
   $body = $field_items[0]['value'];
 
   // Invoke hook_certificate_body_alter() to allow all modules to alter the template body.
   drupal_alter('certificate_body', $body, $account, $node);
 
-  if (module_exists('token')) {
-    if (module_exists('purl')) {
-      purl_disable(TRUE);
-    }
-
-    // Clear out un-replaced tokens and use a custom callback, so that we can
-    // have HTML tokens render in the PDF. We probably do not need to sanitize
-    // here as the output is PDF, but it doesn't hurt.
-    $options = array();
-    $options['clear'] = TRUE;
-    $options['sanitize'] = FALSE;
-    $options['callback'] = '_certificate_sanitize_tokens';
-
-    $body = token_replace($body, $types, $options);
+  if (module_exists('purl')) {
+    purl_disable(TRUE);
   }
+
+  // Clear out un-replaced tokens and use a custom callback, so that we can
+  // have HTML tokens render in the PDF. We probably do not need to sanitize
+  // here as the output is PDF, but it doesn't hurt.
+  $options = array();
+  $options['clear'] = TRUE;
+  $options['sanitize'] = FALSE;
+  $options['callback'] = '_certificate_sanitize_tokens';
+
+  $body = token_replace($body, $types, $options);
 
   $format = $field_items[0]['format'];
   $body = check_markup($body, $format);

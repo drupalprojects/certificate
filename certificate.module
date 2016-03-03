@@ -6,49 +6,70 @@
  */
 
 /**
- * Implements hook_node_info().
- */
-function certificate_node_info() {
-  $items = array(
-    'certificate' => array(
-      'name' => t('Certificate'),
-      'base' => 'certificate',
-      'description' => t('A tokenized certificate template that will be converted to a PDF and displayed to users who complete accredited activities.'),
-      'has_title' => TRUE,
-      'title_label' => t('Title'),
-      'has_body' => TRUE,
-      'body_label' => t('Certificate Body'),
-      'min_word_count' => '0',
-      'help' => '',
-      'locked' => TRUE,
-    ),
-  );
-  return $items;
-}
-
-/**
  * Certificate node form.
  */
-function certificate_form(&$node, $form_state) {
-  $form = node_content_form($node, $form_state);
-
-  $form['certificate']['#tree'] = TRUE;
-  $form['certificate']['orientation'] = array(
+function certificate_form($form, &$form_state, $certificate = NULL) {
+  $form['title'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Title'),
+    '#default_value' => isset($certificate->title) ? $certificate->title : '',
+    '#required' => TRUE,
+    '#maxlength' => 128,
+    '#size' => 60,
+    '#weight' => -10,
+  );
+  $form['name'] = array(
+    '#type' => 'machine_name',
+    '#title' => t('Machine name'),
+    '#default_value' => isset($certificate->name) ? $certificate->name : '',
+    '#required' => TRUE,
+    '#maxlength' => 128,
+    '#size' => 60,
+    '#machine_name' => array(
+      'source' => array('title'),
+      'exists' => 'certificate_load',
+    ),
+    '#weight' => -5,
+  );
+  $form['orientation'] = array(
     '#type' => 'radios',
     '#title' => t('Orientation'),
-    '#default_value' => isset($node->certificate['orientation']) ? $node->certificate['orientation'] : '',
+    '#default_value' => isset($certificate->orientation) ? $certificate->orientation : '',
     '#options' => array(
       'portrait' => t('Portrait'),
       'landscape' => t('Landscape'),
     ),
     '#required' => TRUE,
     '#description' => t('The orientation of the generated certificate.'),
+    '#weight' => -1,
   );
-
-  $form['options']['status']['#default_value'] = 0;
-  $form['options']['promote']['#default_value'] = 0;
-
+  $form['certificate_tokens'] = array(
+    '#title' => 'Certificate tokens',
+    '#markup' => theme('token_tree', array('token_types' => array('global', 'node', 'user', 'certificate'))),
+    '#weight' => 90,
+  );
+  field_attach_form('certificate', $certificate, $form, $form_state);
+  $form['actions']['#type'] = 'actions';
+  $form['actions']['submit'] = array(
+    '#type' => 'submit',
+    '#value' => 'Save changes',
+    '#weight' => 99
+  );
   return $form;
+}
+
+/**
+ * Certificate node form submit
+ */
+function certificate_form_submit(&$form, &$form_state) {
+  $certificate = entity_ui_form_submit_build_entity($form, $form_state);
+  if (entity_save('certificate', $certificate)) {
+    drupal_set_message(t('The certificate %title has been saved.', array('%title' => entity_label('certificate', $certificate))));
+  }
+  else {
+    drupal_set_message(t('There was an error saving the certificate'), 'error');
+  }
+  $form_state['redirect'] = 'admin/structure/certificates';
 }
 
 /**
@@ -56,23 +77,6 @@ function certificate_form(&$node, $form_state) {
  */
 function certificate_menu() {
   $items = array();
-
-  $items['admin/structure/certificates'] = array(
-    'title' => 'Certificates',
-    'description' => 'Manage certificates and mappings.',
-    'access arguments' => array('administer certificates'),
-    'file' => 'certificate.admin.inc',
-    'page callback' => 'certificate_templates_list',
-  );
-
-  $items['admin/structure/certificates/templates'] = array(
-    'title' => 'List',
-    'access arguments' => array('administer certificates'),
-    'type' => MENU_DEFAULT_LOCAL_TASK,
-    'file' => 'certificate.admin.inc',
-    'page callback' => 'certificate_templates_list',
-    'weight' => -5,
-  );
 
   $items['admin/structure/certificates/mapping'] = array(
     'title' => 'Mapping',
@@ -84,12 +88,6 @@ function certificate_menu() {
     'weight' => -4,
   );
 
-  $items['admin/structure/certificates/mapping/list'] = array(
-    'title' => 'Global',
-    'type' => MENU_DEFAULT_LOCAL_TASK,
-    'weight' => -5,
-  );
-
   $items['admin/structure/certificates/mapping/groups'] = array(
     'title' => 'Field groups',
     'description' => 'Set up certificate field groups',
@@ -98,6 +96,12 @@ function certificate_menu() {
     'access arguments' => array('administer certificates'),
     'file' => 'certificate.admin.inc',
     'type' => MENU_LOCAL_TASK,
+  );
+
+  $items['admin/structure/certificates/mapping/list'] = array(
+    'title' => 'Global',
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'weight' => -5,
   );
 
   $items['admin/structure/certificates/mapping/groups/add'] = array(
@@ -143,11 +147,11 @@ function certificate_menu() {
     'weight' => 99,
   );
 
-  $items['admin/structure/certificates/templates/preview/%'] = array(
+  $items['admin/structure/certificates/preview/%'] = array(
     'title' => 'Certificate Preview',
     'description' => 'Display earned certificate for this node',
     'page callback' => 'certificate_preview',
-    'page arguments' => array(5),
+    'page arguments' => array(4),
     'access arguments' => array('administer certificates'),
     'file' => 'certificate.pages.inc',
     'type' => MENU_CALLBACK,
@@ -163,15 +167,6 @@ function certificate_menu() {
     'access arguments' => array(1),
     'file' => 'certificate.pages.inc',
     'type' => MENU_LOCAL_TASK,
-  );
-
-  $items['admin/structure/certificates/add'] = array(
-    'title' => 'Create new certificate',
-    'page callback' => 'drupal_goto',
-    'page arguments' => array('node/add/certificate', array('query' => array('destination' => 'admin/structure/certificates'))),
-    'access callback' => 'node_access',
-    'access arguments' => array('create', 'certificate'),
-    'type' => MENU_LOCAL_ACTION,
   );
 
   return $items;
@@ -224,22 +219,12 @@ function certificate_theme() {
 
 /**
  * Public loader function for the full collection of certificates.
- *
- * @todo cache?
- *
  * @return
- *   An array of all certificates, keyed by node (certificate) ID.
+ *   An array of all certificates, keyed by certificate ID.
  */
 function certificate_certificate_load_all() {
-  $result = db_query("SELECT *, nid AS cid FROM {node} n WHERE type = :type ORDER BY title", array(':type' => 'certificate'));
-
-  $certificates = array();
-  while ($certificate = $result->fetch(PDO::FETCH_ASSOC)) {
-    $certificates[$certificate['cid']] = $certificate;
-  }
-
+  $certificates = entity_load('certificate');
   drupal_alter('certificate_template_options', $certificates);
-
   return $certificates;
 }
 
@@ -304,16 +289,6 @@ function certificate_field_attach_form($entity_type, $entity, &$form, &$form_sta
     // Add per-node certificate settings.
     module_load_include('inc', 'certificate', 'certificate.admin');
     certificate_alter_node_form($form, $form_state);
-  }
-
-  if ($entity_type == 'node' && $entity->type == 'certificate') {
-    if (module_exists('token')) {
-      // Embed token help.
-      $form['certificate_tokens'] = array(
-        '#title' => 'Certificate tokens',
-        '#markup' => theme('token_tree', array('token_types' => array('global', 'node', 'user', 'certificate'))),
-      );
-    }
   }
 }
 
@@ -788,4 +763,72 @@ function certificate_coder_ignore() {
     'path' => drupal_get_path('module', 'certificate'),
     'line prefix' => drupal_get_path('module', 'certificate'),
   );
+}
+
+/**
+ * Certificate Entity Support
+ */
+function certificate_entity_info() {
+  $entities['certificate'] = array(
+    'label' => 'Certificate',
+    'base table' => 'certificate',
+    'revision table' => 'certificate_revision',
+    'controller class' => 'EntityAPIControllerExportable',
+    'fieldable' => TRUE,
+    'exportable' => TRUE,
+    'label callback' => 'certificate_entity_info_label',
+    'entity keys' => array(
+      'id' => 'cid',
+      'revision' => 'vid',
+      'label' => 'title',
+      'name' => 'name',
+    ),
+    'bundles' => array(
+      'certificate' => array(
+        'label' => 'Certificate',
+        'admin' => array(
+          'path' => 'admin/structure/certificates/certificate',
+          'access arguments' => array('administer certificates'),
+        ),
+      ),
+    ),
+    'load hook' => 'certificate_load',
+    'module' => 'certificate',
+    'access callback' => 'certificate_access',
+    'views controller class' => 'EntityDefaultViewsController',
+    'admin ui' => array(
+      'path' => 'admin/structure/certificates',
+      'controller class' => 'CertificateEntityUIController',
+    ),
+  );
+  return $entities;
+}
+
+/**
+ * Entity Load Certificate
+ * @param varies Certificate ID or Machine Name
+ */
+function certificate_load($name) {
+  return entity_load_single('certificate', $name);
+}
+
+/**
+ * Certificate Entity Access callback
+ */
+function certificate_access() {
+  return user_access('administer certificates');
+}
+
+/**
+ * Certificate Revisions!
+ */
+function certificate_entity_presave($entity, $type) {
+  if ($type == 'certificate') {
+    if (!isset($entity->created)) {
+      $entity->created = REQUEST_TIME;
+    }
+    $entity->changed = REQUEST_TIME;
+    $entity->is_new_revision = TRUE;
+    $entity->default_revision = TRUE;
+  }
 }

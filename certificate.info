@@ -1,8 +1,8 @@
 core = 7.x
 dependencies[] = "print"
 dependencies[] = "print_pdf"
+dependencies[] = "entity"
 description = "Provides PDF certificates with criteria-based selection."
 name = "Certificate"
-project = "certificate"
-
 files[] = certificate.test
+files[] = certificate.classes.inc

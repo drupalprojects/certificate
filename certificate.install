@@ -65,6 +65,123 @@ function certificate_schema() {
     'primary key' => array('cnid'),
   );
 
+  $schema['certificate'] = array(
+    'description' => 'Stores certificate information.',
+    'fields' => array(
+      'cid' => array(
+        'description' => 'Primary key',
+        'type' => 'serial',
+        'not null' => TRUE,
+      ),
+      'vid' => array(
+        'description' => 'Certificate revision ID',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'title' => array(
+        'description' => 'Title',
+        'type' => 'varchar',
+        'length' => '128',
+      ),
+      'name' => array(
+        'description' => 'Machine Name',
+        'type' => 'varchar',
+        'length' => '128',
+      ),
+      'type' => array(
+        'description' => 'Certificate type',
+        'type' => 'varchar',
+        'length' => '255',
+      ),
+      'orientation' => array(
+        'description' => 'Certificate orientation',
+        'type' => 'varchar',
+        'length' => '255',
+      ),
+      'status' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        // Set the default to ENTITY_CUSTOM without using the constant as it is
+        // not safe to use it at this point.
+        'default' => 0x01,
+        'size' => 'tiny',
+        'description' => 'The exportable status of the entity.',
+      ),
+      'module' => array(
+        'description' => 'The name of the providing module if the entity has been defined in code.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => FALSE,
+      ),
+    ),
+    'primary key' => array('cid'),
+    'foreign keys' => array(
+      'certificate_revision' => array(
+        'table' => 'certificate_revision',
+        'columns' => array('vid' => 'vid'),
+      ),
+    ),
+  );
+
+  $schema['certificate_revision'] = array(
+    'description' => 'Holds information about Certificate.',
+    'fields' => array(
+      'cid' => array(
+        'description' => 'Certificate ID',
+        'type' => 'int',
+        'not null' => TRUE,
+      ),
+      'vid' => array(
+        'description' => 'Certificate revision ID',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'title' => array(
+        'description' => 'Title',
+        'type' => 'varchar',
+        'length' => '128',
+      ),
+      'name' => array(
+        'description' => 'Machine Name',
+        'type' => 'varchar',
+        'length' => '128',
+      ),
+      'type' => array(
+        'description' => 'Certificate type',
+        'type' => 'varchar',
+        'length' => '255',
+      ),
+      'orientation' => array(
+        'description' => 'Certificate orientation',
+        'type' => 'varchar',
+        'length' => '255',
+      ),
+      'created' => array(
+        'description' => 'The Unix timestamp when the credit awarded was created.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'changed' => array(
+        'description' => 'The Unix timestamp when the credit awarded was most recently saved.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+    ),
+    'primary key' => array('vid'),
+    'foreign keys' => array(
+      'certificate' => array(
+        'table' => 'certificate',
+        'columns' => array('cid' => 'cid'),
+      ),
+    ),
+  );
+
+
   $schema['certificate_snapshots'] = array(
     'description' => 'Stores snapshots of users certificate for a particular course.',
     'fields' => array(
@@ -126,9 +243,39 @@ function certificate_install() {
   variable_set('node_options_certificate', array(0 => 'revision'));
   variable_set('comment_certificate', 0);
 
-  node_types_rebuild();
-  $types = node_type_get_types();
-  node_add_body_field($types['certificate'], 'Body');
+  // Add a body field to Certificate entity
+  $body = field_info_field('certificate_body');
+  $body_inst = field_info_instance('certificate', 'certificate_body', 'certificate');
+  if (empty($body)) {
+    $field = array(
+      'field_name' => 'certificate_body',
+      'type' => 'text_with_summary',
+      'entity_types' => array('certificate'),
+    );
+    $field = field_create_field($field);
+  }
+
+  if (empty($body_inst)) {
+    $instance = array(
+      'field_name' => 'certificate_body',
+      'entity_type' => 'certificate',
+      'bundle' => 'certificate',
+      'label' => 'Body',
+      'widget' => array('type' => 'text_textarea_with_summary'),
+      'settings' => array('display_summary' => TRUE),
+      'display' => array(
+        'default' => array(
+          'label' => 'hidden',
+          'type' => 'text_default',
+        ),
+        'teaser' => array(
+          'label' => 'hidden',
+          'type' => 'text_summary_or_trimmed',
+        ),
+      ),
+    );
+    field_create_instance($instance);
+  }
 }
 
 /**
@@ -225,4 +372,166 @@ function certificate_update_7002() {
     'default' => 0,
     'description' => 'Template ID used for generation.',
   ));
+}
+
+/**
+ * Build the Certificate entity table
+ * Add default fields
+ */
+function certificate_update_7003() {
+  if (!db_table_exists('certificate')) {
+    $schema['certificate'] = array(
+      'description' => 'Stores certificate information.',
+      'fields' => array(
+        'cid' => array(
+          'description' => 'Primary key',
+          'type' => 'serial',
+          'not null' => TRUE,
+        ),
+        'vid' => array(
+          'description' => 'Certificate revision ID',
+          'type' => 'int',
+          'unsigned' => TRUE,
+          'not null' => TRUE,
+          'default' => 0,
+        ),
+        'title' => array(
+          'description' => 'Title',
+          'type' => 'varchar',
+          'length' => '128',
+        ),
+        'name' => array(
+          'description' => 'Machine Name',
+          'type' => 'varchar',
+          'length' => '128',
+        ),
+        'type' => array(
+          'description' => 'Certificate type',
+          'type' => 'varchar',
+          'length' => '255',
+        ),
+        'orientation' => array(
+          'description' => 'Certificate orientation',
+          'type' => 'varchar',
+          'length' => '255',
+        ),
+        'status' => array(
+          'type' => 'int',
+          'not null' => TRUE,
+          // Set the default to ENTITY_CUSTOM without using the constant as it is
+          // not safe to use it at this point.
+          'default' => 0x01,
+          'size' => 'tiny',
+          'description' => 'The exportable status of the entity.',
+        ),
+        'module' => array(
+          'description' => 'The name of the providing module if the entity has been defined in code.',
+          'type' => 'varchar',
+          'length' => 255,
+          'not null' => FALSE,
+        ),
+      ),
+      'primary key' => array('cid'),
+      'foreign keys' => array(
+        'certificate_revision' => array(
+          'table' => 'certificate_revision',
+          'columns' => array('vid' => 'vid'),
+        ),
+      ),
+    );
+    db_create_table('certificate', $schema['certificate']);
+  }
+
+  if (!db_table_exists('certificate_revision')) {
+    $schema['certificate_revision'] = array(
+      'description' => 'Holds information about Certificate.',
+      'fields' => array(
+        'cid' => array(
+          'description' => 'Certificate ID',
+          'type' => 'int',
+          'not null' => TRUE,
+        ),
+        'vid' => array(
+          'description' => 'Certificate revision ID',
+          'type' => 'serial',
+          'unsigned' => TRUE,
+          'not null' => TRUE,
+        ),
+        'title' => array(
+          'description' => 'Title',
+          'type' => 'varchar',
+          'length' => '128',
+        ),
+        'name' => array(
+          'description' => 'Machine Name',
+          'type' => 'varchar',
+          'length' => '128',
+        ),
+        'type' => array(
+          'description' => 'Certificate type',
+          'type' => 'varchar',
+          'length' => '255',
+        ),
+        'orientation' => array(
+          'description' => 'Certificate orientation',
+          'type' => 'varchar',
+          'length' => '255',
+        ),
+        'created' => array(
+          'description' => 'The Unix timestamp when the credit awarded was created.',
+          'type' => 'int',
+          'not null' => TRUE,
+          'default' => 0,
+        ),
+        'changed' => array(
+          'description' => 'The Unix timestamp when the credit awarded was most recently saved.',
+          'type' => 'int',
+          'not null' => TRUE,
+          'default' => 0,
+        ),
+      ),
+      'primary key' => array('vid'),
+      'foreign keys' => array(
+        'certificate' => array(
+          'table' => 'certificate',
+          'columns' => array('cid' => 'cid'),
+        ),
+      ),
+    );
+    db_create_table('certificate_revision', $schema['certificate_revision']);
+  }
+
+  // Add a body field to Certificate entity
+  $body = field_info_field('certificate_body');
+  $body_inst = field_info_instance('certificate', 'certificate_body', 'certificate');
+  if (empty($body)) {
+    $field = array(
+      'field_name' => 'certificate_body',
+      'type' => 'text_with_summary',
+      'entity_types' => array('certificate'),
+    );
+    $field = field_create_field($field);
+  }
+
+  if (empty($body_inst)) {
+    $instance = array(
+      'field_name' => 'certificate_body',
+      'entity_type' => 'certificate',
+      'bundle' => 'certificate',
+      'label' => 'Body',
+      'widget' => array('type' => 'text_textarea_with_summary'),
+      'settings' => array('display_summary' => TRUE),
+      'display' => array(
+        'default' => array(
+          'label' => 'hidden',
+          'type' => 'text_default',
+        ),
+        'teaser' => array(
+          'label' => 'hidden',
+          'type' => 'text_summary_or_trimmed',
+        ),
+      ),
+    );
+    field_create_instance($instance);
+  }
 }

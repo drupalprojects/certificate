@@ -26,6 +26,9 @@ class CertificateTestCase extends DrupalWebTestCase {
     variable_set("certificate_certifiable_" . $this->contentType->type, TRUE);
   }
 
+  /**
+   * Test the certificate access check.
+   */
   public function testCertificateAccess() {
     $u1 = $this->drupalCreateUser();
 
@@ -43,17 +46,28 @@ class CertificateTestCase extends DrupalWebTestCase {
     $this->assertTrue($result === TRUE, 'User can access certificate.');
   }
 
+  /**
+   * Test that the user receives the correct certificate.
+   */
   public function testCertificateMapping() {
     $activity_node = $this->drupalCreateNode(array('type' => $this->contentType->type));
-    $certificate = $this->drupalCreateNode(array('type' => 'certificate'));
+    $content = array(
+      'title' => 'Test Certificate',
+      'name' => 'test_certificate',
+      'orientation' => 'portrait',
+      'certificate_body' => array(LANGUAGE_NONE => array(array('value' => 'My Certificate Body 1'))),
+    );
+    $certificate = entity_create('certificate', $content);
+    entity_save('certificate', $certificate);
 
-    $u1 = $this->drupalCreateUser();
+    // We give them the permission because we have to preview it here.
+    $u1 = $this->drupalCreateUser(array('administer certificates'));
     $firstletter = $u1->name[0];
 
     $this->drupalLogin($u1);
     $GLOBALS['certificate_ok'] = TRUE;
 
-    $this->drupalGet("node/{$activity_node->nid}/certificate", array('query' => array('certificate_ok' => 1)));
+    $this->drupalGet("node/{$activity_node->nid}/certificate", array('query' => array('certificate_ok' => 1, 'preview' => TRUE)));
     $this->assertNoResponse(403, 'Did not get access denied.');
     $this->assertNoText('Custom access denied message.', 'Did not find moduled provided access denied message on certificate page.');
     $this->assertText('Sorry, there is no certificate available.', 'Found no certificate available text.');
@@ -61,44 +75,48 @@ class CertificateTestCase extends DrupalWebTestCase {
     // Map the first letter of the user's name to the certificate.
     certificate_update_node_mappings($activity_node->nid, array(
       'firstletter' => array(
-        $firstletter => $certificate->nid,
+        $firstletter => $certificate->cid,
       ),
     ));
 
-    $this->drupalGet("node/{$activity_node->nid}/certificate", array('query' => array('certificate_ok' => 1)));
+    $this->drupalGet("node/{$activity_node->nid}/certificate", array('query' => array('certificate_ok' => 1, 'preview' => TRUE)));
     $this->assertNoResponse(403, 'Did not get access denied.');
     $this->assertNoText('Custom access denied message.', 'Did not find module provided access denied message on certificate page.');
     $this->assertNoText('Sorry, there is no certificate available.', 'User received certificate.');
+    $this->assertText("My Certificate Body 1", "Saw certificate body.");
   }
 
   /**
-   * Test certicificate templating and tokens.
+   * Test the token replacement inside of certificates.
    */
   function testCertificateTemplates() {
+    // We give them the permission because we have to preview it here.
     $account = $this->drupalCreateUser(array('administer certificates'));
-
-    $node = $this->drupalCreateNode(array(
+    $activity_node = $this->drupalCreateNode(array(
       'title' => 'My test certifiable type',
+      'type' => $this->contentType->type,
     ));
 
-    $certificate = $this->drupalCreateNode(array(
-      'type' => 'certificate',
-      'body' => array(LANGUAGE_NONE => array(array('value' => '[node:title][user:name]'))),
-    ));
-
+    $content = array(
+      'title' => 'Test Certificate',
+      'name' => 'test_certificate',
+      'orientation' => 'portrait',
+      'certificate_body' => array(LANGUAGE_NONE => array(array('value' => 'My Certificate Body [node:title] [user:name]'))),
+    );
+    $certificate = entity_create('certificate', $content);
+    entity_save('certificate', $certificate);
     $firstletter = $account->name[0];
 
     // Map the first letter of the user's name to the certificate.
-    certificate_update_node_mappings($node->nid, array(
+    certificate_update_node_mappings($activity_node->nid, array(
       'firstletter' => array(
-        $firstletter => $certificate->nid,
+        $firstletter => $certificate->cid,
       ),
     ));
 
     $this->drupalLogin($account);
-    $this->drupalGet("node/$node->nid/certificate?preview");
-    $this->assertText('My test certifiable type', "Saw node title.");
-    $this->assertText($account->name, "Saw user name.");
+    $this->drupalGet("node/{$activity_node->nid}/certificate", array('query' => array('certificate_ok' => 1, 'preview' => TRUE)));
+    $this->assertText("My Certificate Body $activity_node->title $account->name", "Saw certificate body.");
   }
 
 }
