@@ -359,9 +359,15 @@ function certificate_node_insert($node) {
  */
 function certificate_node_update($node) {
   if (certificate_node_is_certifiable($node)) {
+    //** @kludge two update points here */
     // Update node mappings from a certifiable activity.
     if (!empty($node->certificate['map'])) {
+      // Update from a node form.
       certificate_update_node_mappings($node->nid, $node->certificate['map']);
+    }
+    else if (!empty($node->certificate['node_settings'])) {
+      // Update programmatically.
+      certificate_update_node_mappings($node->nid, $node->certificate['node_settings']);
     }
   }
 
