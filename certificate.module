@@ -368,9 +368,6 @@ function certificate_node_load($nodes, $types) {
     if (certificate_node_is_certifiable($node)) {
       $nodes[$nid]->certificate = array('node_settings' => certificate_course_node_template_settings($node->nid));
     }
-    if ($node->type == 'certificate') {
-      $nodes[$nid]->certificate = db_query("select * from {certificate_node_settings} where nid = :nid", array(':nid' => $node->nid))->fetch(PDO::FETCH_ASSOC);
-    }
   }
 }
 
@@ -422,7 +419,7 @@ function certificate_field_extra_fields() {
   $extra['certificate']['certificate']['form']['certificate'] = array(
     'label' => t('Certificate tokens'),
     'description' => t('Tokens to insert into the certificate'),
-    'weight' => 4,
+    'weight' => 5,
   );
 
 
@@ -492,8 +489,6 @@ function certificate_snapshot_save($snapshot) {
  */
 function certificate_snapshot_delete($account, $node) {
   $sql = "DELETE FROM {certificate_snapshots} WHERE uid = %d AND nid = %d";
-  // TODO Please review the conversion of this statement to the D7 database API syntax.
-  /* db_query($sql, $account->uid, $node->nid) */
   db_delete('certificate_snapshots')
     ->condition('uid', $account->uid)
     ->condition('nid', $node->nid)
@@ -510,8 +505,6 @@ function certificate_snapshot_delete($account, $node) {
  */
 function certificate_snapshot_delete_by_node($node) {
   $sql = "DELETE FROM {certificate_snapshots} WHERE nid = %d";
-  // TODO Please review the conversion of this statement to the D7 database API syntax.
-  /* db_query($sql, $node->nid) */
   db_delete('certificate_snapshots')
     ->condition('nid', $node->nid)
     ->execute();
@@ -572,9 +565,6 @@ function certificate_reset_certificates_action($object, $context) {
   if ($node->nid && is_numeric($node->nid)) {
     certificate_snapshot_delete_by_node($node);
     watchdog('action', 'Reset certificate snapshots for: %node.', array('%node' => $node->title));
-  }
-  else {
-    //print_r("No Node");
   }
 }
 
@@ -651,7 +641,7 @@ function certificate_can_access_certificate($node, $account = NULL, $flush = FAL
 /**
  * Implements hook_user_cancel().
  */
-function certificate_user_cancel($edit, $account, $method) {
+function certificate_user_delete($account) {
   $sql = "DELETE FROM {certificate_snapshots} WHERE uid = :uid";
   db_query($sql, array(':uid' => $account->uid));
 }
@@ -779,6 +769,8 @@ function certificate_coder_ignore() {
  * Certificate Entity Support
  */
 function certificate_entity_info() {
+  $entities = array();
+
   $entities['certificate'] = array(
     'label' => 'Certificate',
     'base table' => 'certificate',
@@ -811,12 +803,17 @@ function certificate_entity_info() {
       'controller class' => 'CertificateEntityUIController',
     ),
   );
+
   return $entities;
 }
 
 /**
- * Entity Load Certificate
- * @param varies Certificate ID or Machine Name
+ * Load a single certificate by ID or name.
+ *
+ * Wrapper around entity_load_single().
+ *
+ * @param mixed
+ *   A certificate ID or name.
  */
 function certificate_load($name) {
   return entity_load_single('certificate', $name);
@@ -830,15 +827,16 @@ function certificate_access() {
 }
 
 /**
- * Certificate Revisions!
+ * Implements hook_entity_presave().
+ *
+ * Set this newly saved revision as the active revision.
  */
-function certificate_entity_presave($entity, $type) {
-  if ($type == 'certificate') {
-    if (!isset($entity->created)) {
-      $entity->created = REQUEST_TIME;
-    }
-    $entity->changed = REQUEST_TIME;
-    $entity->is_new_revision = TRUE;
-    $entity->default_revision = TRUE;
+function certificate_certificate_presave($entity) {
+  if (!isset($entity->created)) {
+    $entity->created = REQUEST_TIME;
   }
+  $entity->changed = REQUEST_TIME;
+
+  $entity->is_new_revision = TRUE;
+  $entity->default_revision = TRUE;
 }

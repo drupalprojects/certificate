@@ -273,6 +273,7 @@ function certificate_install() {
           'type' => 'text_summary_or_trimmed',
         ),
       ),
+      'weight' => 4,
     );
     field_create_instance($instance);
   }
