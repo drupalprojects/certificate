@@ -55,11 +55,11 @@ function certificate_schema() {
         'description' => 'The value to match on.',
       ),
       'template' => array(
-        'type' => 'int',
+        'type' => 'varchar',
         'not null' => TRUE,
-        'unsigned' => FALSE,
-        'default' => 0,
-        'description' => 'The certificate node ID to deliver on a match.',
+        'default' => '',
+        'length' => 256,
+        'description' => 'The certificate to deliver on a match.',
       ),
     ),
     'primary key' => array('cnid'),
@@ -206,11 +206,11 @@ function certificate_schema() {
         'description' => '{node}.nid of the node.',
       ),
       'cid' => array(
-        'type' => 'int',
+        'type' => 'varchar',
         'not null' => TRUE,
-        'unsigned' => TRUE,
-        'default' => 0,
-        'description' => 'Template ID used for generation.',
+        'default' => '',
+        'length' => 256,
+        'description' => 'Template name used for generation.',
       ),
       'date' => array(
         'type' => 'int',
@@ -534,4 +534,47 @@ function certificate_update_7003() {
     );
     field_create_instance($instance);
   }
+}
+
+/**
+ * Change mapping field into a varchar for machine name mapping.
+ */
+function certificate_update_7004() {
+  db_change_field('certificate_node', 'template', 'template', array(
+    'type' => 'varchar',
+    'not null' => TRUE,
+    'default' => '',
+    'length' => 256,
+    'description' => 'The certificate to deliver on a match.',
+  ));
+
+  db_change_field('certificate_snapshots', 'cid', 'cid', array(
+    'type' => 'varchar',
+    'not null' => TRUE,
+    'default' => '',
+    'length' => 256,
+    'description' => 'Template name used for generation.',
+  ));
+}
+
+/**
+ * Migrate node certificates to entities.
+ */
+function certificate_update_7005() {
+  module_enable(array('entity'));
+  $nodes = node_load_multiple(array(), array('type' => 'certificate'));
+
+  foreach ($nodes as $node) {
+    /* @var $certificate Entity */
+    $certificate = entity_create('certificate', array(
+      'cid' => $node->nid,
+      'title' => $node->title,
+      'name' => $node->nid,
+      'certificate_body' => $node->body,
+    ));
+    $certificate->save();
+    node_delete($node->nid);
+  }
+
+  return t('Migrated certificates. New machine names are the original node IDs.');
 }
