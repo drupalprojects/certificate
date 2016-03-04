@@ -98,8 +98,6 @@ function certificate_type_mapping_form($form_state, $node = NULL) {
  * Alters the node form to inject the appropriate per-node template settings.
  */
 function certificate_alter_node_form(&$form, &$form_state) {
-  global $user;
-
   // Add template-mapping form.
   // Note, make sure to set #tree to TRUE.
   if (user_access('administer certificates') || user_access('assign certificates')) {
