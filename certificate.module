@@ -28,7 +28,7 @@ function certificate_form($form, &$form_state, $certificate = NULL) {
     '#size' => 60,
     '#machine_name' => array(
       'source' => array('title'),
-      'exists' => 'certificate_load',
+      'exists' => 'certificate_load_single',
     ),
   );
 
@@ -775,6 +775,7 @@ function certificate_entity_info() {
     'label' => 'Certificate',
     'base table' => 'certificate',
     'revision table' => 'certificate_revision',
+    'entity class' => 'Entity',
     'controller class' => 'EntityAPIControllerExportable',
     'fieldable' => TRUE,
     'exportable' => TRUE,
@@ -807,7 +808,7 @@ function certificate_entity_info() {
   return $entities;
 }
 
-/**
+ /**
  * Load a single certificate by ID or name.
  *
  * Wrapper around entity_load_single().
@@ -815,9 +816,10 @@ function certificate_entity_info() {
  * @param mixed
  *   A certificate ID or name.
  */
-function certificate_load($name) {
+function certificate_load_single($name) {
   return entity_load_single('certificate', $name);
 }
+
 
 /**
  * Certificate Entity Access callback

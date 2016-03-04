@@ -138,7 +138,7 @@ function certificate_mapping_form(&$form, &$form_state) {
     '' => t('- no action -'),
   );
   foreach (certificate_certificate_load_all() as $cert) {
-    $options[$cert->cid] = entity_label('certificate', $cert);
+    $options[$cert->name] = entity_label('certificate', $cert);
   }
 
   foreach ($mappings as $map_type => $map) {

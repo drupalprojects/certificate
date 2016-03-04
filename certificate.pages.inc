@@ -112,10 +112,10 @@ function certificate_single($account, $node) {
   drupal_alter('certificate_template_id', $template_id, $node, $account);
 
   if ($template_id && $node) {
-    $template = certificate_load($template_id);
+    $template = entity_load('certificate', $template_id);
     // See if user already has a snapshotted certificate for a course. If so, grab
     // from the DB. If not, generate a new one.
-    if (variable_get('certificate_snapshots', 0) && $snapshot = certificate_snapshot_load($account, $node, $template->cid)) {
+    if (variable_get('certificate_snapshots', 0) && $snapshot = certificate_snapshot_load($account, $node, $template->name)) {
       $output = $snapshot['snapshot'];
     }
     else {
@@ -129,7 +129,7 @@ function certificate_single($account, $node) {
       // Now save this generated certificate as a 'snapshot' in the database.
       $snapshot['uid'] = $account->uid;
       $snapshot['nid'] = $node->nid;
-      $snapshot['cid'] = $template->cid;
+      $snapshot['cid'] = $template->name;
       $date = getdate();
       $snapshot['date'] = $date[0];
       $snapshot['snapshot'] = $output;
@@ -168,7 +168,7 @@ function certificate_single($account, $node) {
  */
 function certificate_preview($cid) {
   global $user;
-  $template = certificate_load($cid);
+  $template = entity_load('certificate', $cid);
   if ($template) {
     $output = '<html><head><meta charset="utf-8"/></head><body>' . theme('certificate_certificate', array('node' => NULL, 'account' => $user, 'template' => $template)) . '</body></html>';
   }
