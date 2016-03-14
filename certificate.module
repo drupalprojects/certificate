@@ -424,13 +424,15 @@ function certificate_node_view($node, $view_mode, $langcode) {
 function certificate_field_extra_fields() {
   $extra = array();
   foreach (entity_get_info() as $entity_type => $entity_info) {
-    foreach (array_keys($entity_info['bundles']) as $bundle) {
-      if (variable_get('certificate_certifiable_' . $bundle)) {
-        $extra[$entity_type][$bundle]['form']['certificate'] = array(
-          'label' => t('Certificate'),
-          'description' => t('Certificate module elements'),
-          'weight' => 0,
-        );
+    if ($entity_type == 'node') {
+      foreach (array_keys($entity_info['bundles']) as $bundle) {
+        if (variable_get('certificate_certifiable_' . $bundle)) {
+          $extra[$entity_type][$bundle]['form']['certificate'] = array(
+            'label' => t('Certificate'),
+            'description' => t('Certificate module elements'),
+            'weight' => 0,
+          );
+        }
       }
     }
   }
