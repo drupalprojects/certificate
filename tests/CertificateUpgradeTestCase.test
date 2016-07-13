@@ -1,0 +1,165 @@
+<?php
+
+class CertificateUpgradeTestCase extends UpdatePathTestCase {
+
+  public static function getInfo() {
+    return array(
+      'name' => t('Certificate upgrade'),
+      'description' => t('Test an update from Certificate 2.x'),
+      'group' => t('Certificate'),
+    );
+  }
+
+  public function setUp() {
+    // Path to the database dump files.
+    $this->databaseDumpFiles = array(
+      drupal_get_path('module', 'certificate') . '/tests/cert2.php.gz',
+    );
+    parent::setUp();
+  }
+
+  /**
+   * Test an upgrade to Certificate 7.x-3.x from 7.x-2.x
+   */
+  function testUpdate() {
+    $this->assertTrue($this->performUpgrade(), 'The upgrade was completed successfully.');
+    drupal_get_schema(NULL, TRUE);
+
+    $schema = drupal_get_schema_unprocessed('certificate');
+    foreach ($schema as $table => $info) {
+      $this->assertTrue(db_table_exists($table), "$table exists");
+      foreach ($info['fields'] as $field_name => $field_info) {
+        $this->assertTrue(db_field_exists($table, $field_name), "$table has $field_name");
+      }
+      if (isset($info['indexes'])) {
+        foreach ($info['indexes'] as $index_name => $columns) {
+          $this->assertTrue(db_index_exists($table, $index_name), "$table has index $index_name");
+        }
+      }
+      if (isset($info['unique keys'])) {
+        foreach ($info['unique keys'] as $index_name => $columns) {
+          $this->assertTrue(db_index_exists($table, $index_name), "$table has unique key $index_name");
+        }
+      }
+    }
+
+    // Manually load this file for some reason.
+    module_load_include('inc', 'entity', 'includes/entity.controller');
+    module_load_include('inc', 'entity', 'includes/entity.ui');
+    module_load_include('inc', 'certificate', 'certificate.classes');
+
+    // Check certificate migrations.
+    $this->drupalGet('admin/structure/certificates');
+    $this->assertText('Template A Portrait (Machine name: 1)');
+    $this->assertText('Template B Landscape (Machine name: 2)');
+
+    $this->drupalGet('admin/structure/certificates/manage/1');
+    $this->assertText('This is the body for Template A Portrait. It is filtered HTML.');
+    $this->assertFieldChecked('edit-orientation-portrait');
+    $this->assertOptionSelected('edit-certificate-body-und-0-format--2', 'filtered_html');
+
+    $this->drupalGet('admin/structure/certificates/manage/2');
+    $this->assertText('This is the body for Template B Landscape. It is full html.');
+    $this->assertFieldChecked('edit-orientation-landscape');
+    $this->assertOptionSelected('edit-certificate-body-und-0-format--2', 'full_html');
+
+    // Check global mappings.
+    $this->drupalGet('admin/structure/certificates/mapping');
+    $this->assertOptionSelected('edit-certificate-map-manual-manual', '1');
+    $this->assertOptionSelected('edit-certificate-map-firstletter-a', '1');
+    $this->assertOptionSelected('edit-certificate-map-firstletter-b', '2');
+
+    // Check existing mapping (reversed from global).
+    $this->drupalGet('node/3/edit');
+    $this->assertOptionSelected('edit-certificate-map-manual-manual', '2');
+    $this->assertOptionSelected('edit-certificate-map-firstletter-a', '2');
+    $this->assertOptionSelected('edit-certificate-map-firstletter-b', '1');
+  }
+
+  /**
+   * Perform the upgrade.
+   *
+   * Core simpletest doesn't clear caches correctly and results in
+   * Entity API errors.
+   *
+   * @param $register_errors
+   *   Register the errors during the upgrade process as failures.
+   * @return
+   *   TRUE if the upgrade succeeded, FALSE otherwise.
+   */
+  protected function performUpgrade($register_errors = TRUE) {
+    if (!$this->zlibInstalled) {
+      $this->fail(t('Missing zlib requirement for upgrade tests.'));
+      return FALSE;
+    }
+
+    $update_url = $GLOBALS['base_url'] . '/update.php';
+
+    // Load the first update screen.
+    $this->drupalGet($update_url, array('external' => TRUE));
+    if (!$this->assertResponse(200)) {
+      return FALSE;
+    }
+
+    // Continue.
+    $this->drupalPost(NULL, array(), t('Continue'));
+    if (!$this->assertResponse(200)) {
+      return FALSE;
+    }
+
+    // The test should pass if there are no pending updates.
+    $content = $this->drupalGetContent();
+    if (strpos($content, t('No pending updates.')) !== FALSE) {
+      $this->pass(t('No pending updates and therefore no upgrade process to test.'));
+      $this->pendingUpdates = FALSE;
+      return TRUE;
+    }
+
+    // Go!
+    $this->drupalPost(NULL, array(), t('Apply pending updates'));
+    if (!$this->assertResponse(200)) {
+      return FALSE;
+    }
+
+    // Check for errors during the update process.
+    foreach ($this->xpath('//li[@class=:class]', array(':class' => 'failure')) as $element) {
+      $message = strip_tags($element->asXML());
+      $this->upgradeErrors[] = $message;
+      if ($register_errors) {
+        $this->fail($message);
+      }
+    }
+
+    if (!empty($this->upgradeErrors)) {
+      // Upgrade failed, the installation might be in an inconsistent state,
+      // don't process.
+      return FALSE;
+    }
+
+    // Check if there still are pending updates.
+    $this->drupalGet($update_url, array('external' => TRUE));
+    $this->drupalPost(NULL, array(), t('Continue'));
+    if (!$this->assertText(t('No pending updates.'), 'No pending updates at the end of the update process.')) {
+      return FALSE;
+    }
+
+    // Upgrade succeed, rebuild the environment so that we can call the API
+    // of the child site directly from this request.
+    $this->upgradedSite = TRUE;
+
+    // Reload hook implementations
+    module_implements('', FALSE, TRUE);
+
+    registry_rebuild();
+
+    // Rebuild caches.
+    //drupal_static_reset();
+    //drupal_flush_all_caches();
+    // Reload global $conf array and permissions.
+    //$this->refreshVariables();
+    //$this->checkPermissions(array(), TRUE);
+
+    return TRUE;
+  }
+
+}
