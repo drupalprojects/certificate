@@ -564,6 +564,8 @@ function certificate_update_7005() {
   module_enable(array('entity'));
   $nodes = node_load_multiple(array(), array('type' => 'certificate'));
 
+  $certificate_settings = db_select('certificate_node_settings', 'c')->fields('c')->execute()->fetchAllKeyed(0, 1);
+
   foreach ($nodes as $node) {
     /* @var $certificate Entity */
     $certificate = entity_create('certificate', array(
@@ -571,6 +573,7 @@ function certificate_update_7005() {
       'title' => $node->title,
       'name' => $node->nid,
       'certificate_body' => $node->body,
+      'orientation' => $certificate_settings[$node->nid],
     ));
     $certificate->save();
     node_delete($node->nid);
