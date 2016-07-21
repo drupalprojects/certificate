@@ -1,10 +1,10 @@
 <?php
 
-class CertificateUpgradeTestCase extends UpdatePathTestCase {
+class CertificateUpdateTestCase extends UpdatePathTestCase {
 
   public static function getInfo() {
     return array(
-      'name' => t('Certificate upgrade'),
+      'name' => t('Certificate update'),
       'description' => t('Test an update from Certificate 2.x'),
       'group' => t('Certificate'),
     );
@@ -25,6 +25,7 @@ class CertificateUpgradeTestCase extends UpdatePathTestCase {
     $this->assertTrue($this->performUpgrade(), 'The upgrade was completed successfully.');
     drupal_get_schema(NULL, TRUE);
 
+    // Check that the updated schema matches our hook_schema().
     $schema = drupal_get_schema_unprocessed('certificate');
     foreach ($schema as $table => $info) {
       $this->assertTrue(db_table_exists($table), "$table exists");
@@ -50,8 +51,10 @@ class CertificateUpgradeTestCase extends UpdatePathTestCase {
 
     // Check certificate migrations.
     $this->drupalGet('admin/structure/certificates');
-    $this->assertText('Template A Portrait (Machine name: 1)');
-    $this->assertText('Template B Landscape (Machine name: 2)');
+    $this->assertText('Template A Portrait');
+    $this->assertText('Machine name: 1)');
+    $this->assertText('Template B Landscape');
+    $this->assertText('Machine name: 2)');
 
     $this->drupalGet('admin/structure/certificates/manage/1');
     $this->assertText('This is the body for Template A Portrait. It is filtered HTML.');

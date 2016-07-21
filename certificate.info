@@ -6,4 +6,4 @@ description = "Provides PDF certificates with criteria-based selection."
 name = "Certificate"
 files[] = certificate.test
 files[] = certificate.classes.inc
-files[] = tests/CertificateUpgradeTestCase.test
+files[] = tests/CertificateUpdateTestCase.test
