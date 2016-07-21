@@ -205,7 +205,7 @@ function theme_certificate_certificate($variables) {
     'user' => $account,
   );
 
-  $view = entity_view('certificate', array($template));
+  $view = entity_view('certificate', array($template), 'full', NULL, TRUE);
   $page = drupal_render($view);
 
   if (module_exists('purl')) {
