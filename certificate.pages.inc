@@ -159,7 +159,7 @@ function certificate_single($account, $node) {
     }
 
     module_load_include('pages.inc', 'print_pdf', 'print_pdf');
-    certificate_print_pdf_wrapper($node->title . '.pdf', $output, isset($template) ? $template->certificate['orientation'] : variable_get('print_pdf_page_orientation', PRINT_PDF_PAGE_ORIENTATION_DEFAULT));
+    certificate_print_pdf_wrapper($node->title . '.pdf', $output, isset($template) ? $template->orientation : variable_get('print_pdf_page_orientation', PRINT_PDF_PAGE_ORIENTATION_DEFAULT));
   }
 }
 
