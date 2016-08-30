@@ -45,7 +45,13 @@ function certificate_form($form, &$form_state, $certificate = NULL) {
   );
 
   $form['certificate_tokens'] = array(
-    '#title' => 'Certificate tokens',
+    '#type' => 'fieldset',
+    '#title' => t('Replacement tokens'),
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+  );
+
+  $form['certificate_tokens']['tokens'] = array(
     '#markup' => theme('token_tree', array('token_types' => array('global', 'node', 'user', 'certificate'))),
   );
 
