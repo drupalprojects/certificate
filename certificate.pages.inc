@@ -129,7 +129,7 @@ function certificate_single($account, $node) {
       // Now save this generated certificate as a 'snapshot' in the database.
       $snapshot['uid'] = $account->uid;
       $snapshot['nid'] = $node->nid;
-      $snapshot['cid'] = $template->cid;
+      $snapshot['cid'] = $template->name;
       $date = getdate();
       $snapshot['date'] = $date[0];
       $snapshot['snapshot'] = $output;
