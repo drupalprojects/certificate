@@ -59,7 +59,7 @@ function certificate_single($account, $node) {
       drupal_alter('certificate_map', $matches, $node, $account, $map_type, array_keys(array_filter((array) $mapping[$map_type])), array());
       if (count($matches)) {
         foreach ($matches as $match_key) {
-          if (!empty($mapping[$map_type][$match_key])) {
+          if (!empty($mapping[$map_type][$match_key]) && $mapping[$map_type][$match_key] != -1) {
             // This is a valid certificate ID.
             $template_ids[$mapping[$map_type][$match_key]] = $map_options[$map_type]['options'][$match_key];
           }
