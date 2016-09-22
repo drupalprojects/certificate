@@ -460,7 +460,7 @@ function certificate_node_is_certifiable($node) {
 function certificate_snapshot_load($account, $node, $cid) {
   // Pull the certificate snapshot.
   // Note that a pre-7002 snapshot, since we do not know which certificate was snapshotted, will return the existing snapshot.
-  $result = db_query("SELECT * FROM {certificate_snapshots} WHERE uid = :uid AND nid = :nid AND (cid = 0 OR cid = :cid)", array(':uid' => $account->uid, ':nid' => $node->nid, ':cid' => $cid));
+  $result = db_query("SELECT * FROM {certificate_snapshots} WHERE uid = :uid AND nid = :nid AND (cid = '0' OR cid = :cid)", array(':uid' => $account->uid, ':nid' => $node->nid, ':cid' => $cid));
   return $result->fetch(PDO::FETCH_ASSOC);
 }
 
