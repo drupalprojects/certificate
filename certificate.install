@@ -379,6 +379,10 @@ function certificate_update_7002() {
  * Add default fields
  */
 function certificate_update_7003() {
+  if (!module_exists('field')) {
+    throw new DrupalUpdateException('Delaying update - enable field module.');
+  }
+
   if (!db_table_exists('certificate')) {
     $schema['certificate'] = array(
       'description' => 'Stores certificate information.',
