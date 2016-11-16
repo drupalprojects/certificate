@@ -139,6 +139,8 @@ function certificate_mapping_form(&$form, &$form_state) {
     $options[$cert->name] = entity_label('certificate', $cert);
   }
 
+  asort($options);
+
   foreach ($mappings as $map_type => $map) {
     $form['certificate']['map'][$map_type] = array(
       '#title' => check_plain($map['title']),
@@ -154,7 +156,7 @@ function certificate_mapping_form(&$form, &$form_state) {
         $form['certificate']['map'][$map_type][$key] = array(
           '#type' => 'select',
           '#title' => filter_xss($title),
-          '#options' => asort($options),
+          '#options' => $options,
           '#default_value' => isset($stored[$map_type][$key]) ? $stored[$map_type][$key] : NULL,
         );
       }
