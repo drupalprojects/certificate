@@ -63,6 +63,9 @@ function certificate_schema() {
       ),
     ),
     'primary key' => array('cnid'),
+    'indexes' => array(
+      'nid' => array('nid'),
+     ),
   );
 
   $schema['certificate'] = array(
@@ -149,11 +152,6 @@ function certificate_schema() {
         'type' => 'varchar',
         'length' => '128',
       ),
-      'type' => array(
-        'description' => 'Certificate type',
-        'type' => 'varchar',
-        'length' => '255',
-      ),
       'orientation' => array(
         'description' => 'Certificate orientation',
         'type' => 'varchar',
@@ -228,6 +226,49 @@ function certificate_schema() {
     'primary key' => array('csid'),
   );
 
+  $schema['certificate_type'] = array(
+    'description' => 'Stores information about all defined certificate types.',
+    'fields' => array(
+      'id' => array(
+        'type' => 'serial',
+        'not null' => TRUE,
+        'description' => 'Unique certificate type ID.',
+      ),
+      'type' => array(
+        'description' => 'The machine-readable name of this certificate type.',
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => TRUE,
+      ),
+      'label' => array(
+        'description' => 'The human-readable name of this certificate type.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'status' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        // Set the default to ENTITY_CUSTOM without using the constant as it is
+        // not safe to use it at this point.
+        'default' => 0x01,
+        'size' => 'tiny',
+        'description' => 'The exportable status of the entity.',
+      ),
+      'module' => array(
+        'description' => 'The name of the providing module if the entity has been defined in code.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => FALSE,
+      ),
+    ),
+    'primary key' => array('id'),
+    'unique keys' => array(
+      'type' => array('type'),
+    ),
+  );
+
   return $schema;
 }
 
@@ -276,6 +317,13 @@ function certificate_install() {
     );
     field_create_instance($instance);
   }
+
+  // Default certificate bundle.
+  $certificate_type = entity_create('certificate_type', array(
+    'type' => 'certificate',
+    'label' => t('Certificate'),
+  ));
+  $certificate_type->save();
 }
 
 /**
@@ -578,10 +626,88 @@ function certificate_update_7005() {
       'name' => $node->nid,
       'certificate_body' => $node->body,
       'orientation' => $certificate_settings[$node->nid],
+      'type' => 'certificate',
     ));
     $certificate->save();
     node_delete($node->nid);
   }
 
   return t('Migrated certificates. New machine names are the original node IDs.');
+}
+
+/**
+ * Add certificate types.
+ */
+function certificate_update_7006() {
+  $schema = array();
+
+  $schema['certificate_type'] = array(
+    'description' => 'Stores information about all defined certificate types.',
+    'fields' => array(
+      'id' => array(
+        'type' => 'serial',
+        'not null' => TRUE,
+        'description' => 'Unique certificate type ID.',
+      ),
+      'type' => array(
+        'description' => 'The machine-readable name of this certificate type.',
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => TRUE,
+      ),
+      'label' => array(
+        'description' => 'The human-readable name of this certificate type.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'status' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        // Set the default to ENTITY_CUSTOM without using the constant as it is
+        // not safe to use it at this point.
+        'default' => 0x01,
+        'size' => 'tiny',
+        'description' => 'The exportable status of the entity.',
+      ),
+      'module' => array(
+        'description' => 'The name of the providing module if the entity has been defined in code.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => FALSE,
+      ),
+    ),
+    'primary key' => array('id'),
+    'unique keys' => array(
+      'type' => array('type'),
+    ),
+  );
+
+  db_create_table('certificate_type', $schema['certificate_type']);
+  drupal_get_schema(NULL, TRUE);
+
+  $certificate_type = array(
+    'type' => 'certificate',
+    'label' => t('Certificate'),
+  );
+  drupal_write_record('certificate_type', $certificate_type);
+
+  db_update('certificate')
+    ->fields(array('type' => 'certificate'))
+    ->execute();
+
+
+  db_drop_field('certificate_revision', 'type');
+  drupal_get_schema(NULL, TRUE);
+  entity_info_cache_clear();
+}
+
+/**
+ * Add indexes for sites with many certificate templates and mappings.
+ */
+function certificate_update_7007() {
+  if (!db_index_exists('certificate_node', 'nid')) {
+    db_add_index('certificate_node', 'nid', array('nid'));
+  }
 }

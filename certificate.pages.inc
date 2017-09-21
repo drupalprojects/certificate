@@ -123,8 +123,20 @@ function certificate_single($account, $node) {
       // See http://code.google.com/p/wkhtmltopdf/issues/detail?id=556
       // Print module gets around this because the meta tag in Drupal is already
       // set - but here, we have to add it since we are only delivering the node
-      // body.
-      $output = '<html><head><meta charset="utf-8"/></head><body>' . theme('certificate_certificate', array('node' => $node, 'account' => $account, 'template' => $template)) . '</body></html>';
+      // body. We also need to get CSS after the certificate has rendered,
+      // otherwise things like DS are not included.
+      $page = theme('certificate_certificate', array('node' => $node, 'account' => $account, 'template' => $template));
+
+      // Remove theme css.
+      $css = drupal_add_css();
+      foreach ($css as $key => $value) {
+        if (strpos($key, 'modules') === FALSE) {
+          unset($css[$key]);
+        }
+      }
+
+      $css = drupal_get_css($css);
+      $output = "<html><head><meta charset=\"utf-8\"/>$css</head><body>$page</body></html>";
 
       // Now save this generated certificate as a 'snapshot' in the database.
       $snapshot['uid'] = $account->uid;
@@ -170,7 +182,9 @@ function certificate_preview($cid) {
   global $user;
   $template = entity_load_single('certificate', $cid);
   if ($template) {
-    $output = '<html><head><meta charset="utf-8"/></head><body>' . theme('certificate_certificate', array('node' => NULL, 'account' => $user, 'template' => $template)) . '</body></html>';
+    $page = theme('certificate_certificate', array('node' => NULL, 'account' => $user, 'template' => $template));
+    $css = drupal_get_css();
+    $output = "<html><head><meta charset=\"utf-8\"/>$css</head><body>$page</body></html>";
   }
 
   $print_pdf_pdf_tool = variable_get('print_pdf_pdf_tool', '');
@@ -204,7 +218,6 @@ function theme_certificate_certificate($variables) {
     'node' => $node,
     'user' => $account,
   );
-
   $view = entity_view('certificate', array($template), 'full', NULL, TRUE);
   $page = drupal_render($view);
 

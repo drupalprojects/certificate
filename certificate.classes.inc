@@ -3,7 +3,7 @@
 /**
  * Custom Entity admin
  */
-class CertificateEntityUIController extends EntityDefaultUIController {
+class CertificateEntityUIController extends EntityBundleableUIController {
 
   public $overviewPagerLimit = 1000;
 
@@ -38,6 +38,31 @@ class CertificateEntityUIController extends EntityDefaultUIController {
       return 1;
     }
     return strcasecmp($a[0]['data']['#label'], $b[0]['data']['#label']);
+  }
+
+  function hook_menu() {
+    $items = parent::hook_menu();
+
+    // Set this on the object so classes that extend hook_menu() can use it.
+    $this->id_count = count(explode('/', $this->path));
+    $plural_label = isset($this->entityInfo['plural label']) ? $this->entityInfo['plural label'] : $this->entityInfo['label'] . 's';
+
+
+    $items[$this->path] = array(
+      'title' => $plural_label,
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array($this->entityType . '_overview_form', $this->entityType),
+      'description' => 'Manage ' . $plural_label . '.',
+      'access callback' => 'entity_access',
+      'access arguments' => array('view', $this->entityType),
+      'file' => 'includes/entity.ui.inc',
+    );
+    $items[$this->path . '/list'] = array(
+      'title' => 'List',
+      'type' => MENU_DEFAULT_LOCAL_TASK,
+      'weight' => -10,
+    );
+    return $items;
   }
 
 }
