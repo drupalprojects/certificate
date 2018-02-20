@@ -810,6 +810,7 @@ function certificate_entity_info() {
       'access callback' => 'certificate_access',
       'views controller class' => 'EntityDefaultViewsController',
       'admin ui' => array(
+        'file' => 'certificate.module',
         'path' => 'admin/structure/certificates',
         'controller class' => 'CertificateEntityUIController',
       ),
@@ -837,6 +838,7 @@ function certificate_entity_info() {
       'module' => 'course',
       // Enable the entity API's admin UI.
       'admin ui' => array(
+        'file' => 'certificate.module',
         'path' => 'admin/structure/certificate-types',
         'controller class' => 'EntityDefaultUIController',
       ),
